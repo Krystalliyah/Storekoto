@@ -274,7 +274,8 @@ onMounted(() => {
                                 </svg>
                             </span>
                             <Input id="email" type="email" name="email" required
-                                :tabindex="2" autocomplete="email" placeholder="email@example.com" class="it-input" />
+                                :tabindex="2" autocomplete="email" placeholder="email@example.com" class="it-input"
+                                :aria-invalid="!!errors.email" />
                         </div>
                         <InputError :message="errors.email" class="it-field-error" />
                     </div>
