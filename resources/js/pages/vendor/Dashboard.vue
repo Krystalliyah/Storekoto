@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, usePage, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import VendorLayout from '@/layouts/VendorLayout.vue';
 import InputError from '@/components/InputError.vue';
 
@@ -28,26 +28,19 @@ const stats = computed(() => {
       p.totalOrders ??
       (p.recentOrders?.length ?? 0),
 
-    products:
-      s.products ??
-      p.productCount ??
-      (p.products?.length ?? 0),
+    products: s.products ?? p.productCount ?? (p.products?.length ?? 0),
 
-    customers:
-      s.customers ??
-      p.customerCount ??
-      p.customersCount ??
-      (p.customers?.length ?? 0),
+    customers: s.customers ?? p.customerCount ?? p.customersCount ?? (p.customers?.length ?? 0),
   };
 });
 
 const recentOrders = computed(() => (page.props as any).recentOrders || []);
 const lowStockItems = computed(() => (page.props as any).lowStockItems || []);
 
-/** ✅ Modal state (your new name) */
+/** ✅ Modal state */
 const showStoreSetupModal = ref(false);
 
-/** ✅ Store setup form (from your old code) */
+/** ✅ Store setup form */
 const form = useForm({
   store_name: '',
   domain_slug: '',
@@ -55,6 +48,11 @@ const form = useForm({
   city: '',
   phone: '',
   operating_hours: '',
+});
+
+/** Optional: lock body scroll when modal is open */
+watch(showStoreSetupModal, (open) => {
+  document.body.style.overflow = open ? 'hidden' : '';
 });
 
 function openStoreSetupModal() {
@@ -119,10 +117,7 @@ function stockClass(level: string) {
 
         <div class="p-6 space-y-4">
           <div class="flex items-start gap-3">
-            <div
-              class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style="background:#ecfdf5"
-            >
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#ecfdf5">
               <svg class="w-4 h-4" style="color:#245c4a" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
@@ -134,10 +129,7 @@ function stockClass(level: string) {
           </div>
 
           <div class="flex items-start gap-3">
-            <div
-              class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style="background:#fffbeb"
-            >
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#fffbeb">
               <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
@@ -229,14 +221,8 @@ function stockClass(level: string) {
         </div>
 
         <!-- Revenue summary -->
-        <div
-          class="rounded-xl px-5 py-3.5 flex-shrink-0 shadow-md relative overflow-hidden"
-          style="background:#245c4a;min-width:160px"
-        >
-          <div
-            class="absolute -top-6 -right-6 w-20 h-20 rounded-full"
-            style="background:radial-gradient(circle,rgba(197,160,89,.2) 0%,transparent 65%)"
-          ></div>
+        <div class="rounded-xl px-5 py-3.5 flex-shrink-0 shadow-md relative overflow-hidden" style="background:#245c4a;min-width:160px">
+          <div class="absolute -top-6 -right-6 w-20 h-20 rounded-full" style="background:radial-gradient(circle,rgba(197,160,89,.2) 0%,transparent 65%)"></div>
           <p class="text-xs font-semibold uppercase tracking-widest" style="color:rgba(197,160,89,0.6)">
             Monthly Revenue
           </p>
@@ -249,26 +235,15 @@ function stockClass(level: string) {
       <!-- Stat cards -->
       <div class="grid grid-cols-4 gap-3">
         <!-- Orders -->
-        <div
-          class="bg-white rounded-xl border border-border shadow-sm p-4 relative overflow-hidden
-                 transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default group"
-        >
+        <div class="bg-white rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default group">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,#245c4a,#3d7a5c)"></div>
           <div class="flex items-start justify-between mb-3">
             <div class="w-9 h-9 rounded-md flex items-center justify-center" style="background:rgba(36,92,74,.1)">
               <svg class="w-4 h-4" style="color:#245c4a" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </div>
-            <span
-              class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full"
-              style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0"
-            >
+            <span class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0">
               This month
             </span>
           </div>
@@ -280,26 +255,15 @@ function stockClass(level: string) {
         </div>
 
         <!-- Sales -->
-        <div
-          class="bg-white rounded-xl border border-border shadow-sm p-4 relative overflow-hidden
-                 transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default"
-        >
+        <div class="bg-white rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,#C5A059,#d9b87a)"></div>
           <div class="flex items-start justify-between mb-3">
             <div class="w-9 h-9 rounded-md flex items-center justify-center" style="background:rgba(197,160,89,.14)">
               <svg class="w-4 h-4" style="color:#7a5800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <span
-              class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full"
-              style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0"
-            >
+            <span class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0">
               This month
             </span>
           </div>
@@ -313,27 +277,15 @@ function stockClass(level: string) {
         </div>
 
         <!-- Products -->
-        <div
-          class="bg-white rounded-xl border border-border shadow-sm p-4 relative overflow-hidden
-                 transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default"
-        >
+        <div class="bg-white rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,hsl(197 37% 24%),hsl(197 37% 44%))"></div>
           <div class="flex items-start justify-between mb-3">
             <div class="w-9 h-9 rounded-md flex items-center justify-center bg-blue-50">
               <svg class="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
             </div>
-            <span
-              v-if="lowStockItems.length > 0"
-              class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full"
-              style="background:#fffbeb;color:#92400e;border:1px solid #fde68a"
-            >
+            <span v-if="lowStockItems.length > 0" class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#fffbeb;color:#92400e;border:1px solid #fde68a">
               {{ lowStockItems.length }} low stock
             </span>
           </div>
@@ -345,26 +297,15 @@ function stockClass(level: string) {
         </div>
 
         <!-- Customers -->
-        <div
-          class="bg-white rounded-xl border border-border shadow-sm p-4 relative overflow-hidden
-                 transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default"
-        >
+        <div class="bg-white rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,hsl(12 76% 61%),hsl(27 87% 67%))"></div>
           <div class="flex items-start justify-between mb-3">
             <div class="w-9 h-9 rounded-md flex items-center justify-center" style="background:hsl(12 76% 61% / 0.1)">
               <svg class="w-4 h-4" style="color:hsl(12 76% 38%)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-                />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <span
-              class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full"
-              style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0"
-            >
+            <span class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0">
               This month
             </span>
           </div>
@@ -399,23 +340,16 @@ function stockClass(level: string) {
             </a>
           </div>
 
-          <!-- Empty state -->
           <div v-if="recentOrders.length === 0" class="flex flex-col items-center justify-center py-14 text-center px-6">
             <div class="w-12 h-12 rounded-full flex items-center justify-center mb-3" style="background:hsl(0 0% 96.1%)">
               <svg class="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </div>
             <p class="text-sm font-medium text-foreground">No orders yet</p>
             <p class="text-xs text-muted-foreground mt-1">Orders will appear here once customers start buying</p>
           </div>
 
-          <!-- Orders table -->
           <table v-else class="w-full border-collapse">
             <thead>
               <tr style="background:hsl(0 0% 96.1%)">
@@ -486,6 +420,7 @@ function stockClass(level: string) {
               </h2>
               <p class="text-xs text-muted-foreground mt-0.5">Shortcuts to common tasks</p>
             </div>
+
             <div class="grid grid-cols-2 gap-2 p-3">
               <a
                 v-for="action in [
@@ -501,7 +436,6 @@ function stockClass(level: string) {
                        hover:border-[#C5A059] hover:-translate-y-px"
                 style="text-decoration:none"
               >
-                <!-- Icon -->
                 <div
                   class="w-7 h-7 rounded flex items-center justify-center"
                   :style="{
@@ -536,6 +470,7 @@ function stockClass(level: string) {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
+
                 <p class="text-xs font-semibold text-foreground">{{ action.label }}</p>
                 <p class="text-xs text-muted-foreground -mt-0.5">{{ action.sub }}</p>
               </a>
@@ -575,8 +510,7 @@ function stockClass(level: string) {
               <div
                 v-for="item in lowStockItems"
                 :key="item.id"
-                class="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0
-                       transition-colors cursor-pointer hover:bg-accent"
+                class="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 transition-colors cursor-pointer hover:bg-accent"
               >
                 <div class="w-8 h-8 rounded flex items-center justify-center text-base flex-shrink-0" style="background:hsl(0 0% 96.1%)">
                   {{ item.emoji ?? '📦' }}
@@ -585,16 +519,20 @@ function stockClass(level: string) {
                   <p class="text-xs font-semibold text-foreground truncate">{{ item.name }}</p>
                   <p class="text-xs text-muted-foreground mt-0.5">{{ item.sku }} · {{ item.stock }} left</p>
                 </div>
+
                 <div class="flex flex-col items-end gap-1 flex-shrink-0">
                   <span
                     class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full"
                     :class="stockClass(item.level)"
-                    :style="item.level === 'Critical'
-                      ? 'background:#fef2f2;color:#991b1b;border:1px solid #fecaca'
-                      : 'background:#fffbeb;color:#92400e;border:1px solid #fde68a'"
+                    :style="
+                      item.level === 'Critical'
+                        ? 'background:#fef2f2;color:#991b1b;border:1px solid #fecaca'
+                        : 'background:#fffbeb;color:#92400e;border:1px solid #fde68a'
+                    "
                   >
                     {{ item.level }}
                   </span>
+
                   <div class="w-10 h-1 rounded-full" style="background:hsl(0 0% 92.1%)">
                     <div
                       class="h-full rounded-full"
@@ -629,7 +567,7 @@ function stockClass(level: string) {
       </div>
     </div>
 
-    <!-- ✅ IMPORTANT: Modal is OUTSIDE the v-if/v-else blocks, still inside VendorLayout -->
+    <!-- ✅ Modal (RESPONSIVE + SCROLLABLE) -->
     <Transition
       enter-active-class="transition duration-200 ease-out"
       enter-from-class="opacity-0"
@@ -638,17 +576,23 @@ function stockClass(level: string) {
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div v-if="showStoreSetupModal" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div v-if="showStoreSetupModal" class="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-4 sm:py-6">
         <!-- Backdrop -->
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="closeStoreSetupModal"></div>
 
-        <!-- Modal Panel -->
-        <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
-          <!-- Header -->
-          <div class="px-6 pt-5 pb-5" style="background:#245c4a">
+        <!-- Panel -->
+        <div
+          class="relative w-full sm:max-w-lg bg-white rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden
+                 max-h-[calc(100vh-2rem)] flex flex-col"
+        >
+          <!-- Header (fixed inside modal panel) -->
+          <div class="px-6 pt-5 pb-5 flex-shrink-0" style="background:#245c4a">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.15)">
+                <div
+                  class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style="background:rgba(255,255,255,0.15)"
+                >
                   <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       stroke-linecap="round"
@@ -660,7 +604,9 @@ function stockClass(level: string) {
                 </div>
                 <div>
                   <h3 class="text-base font-bold text-white">Setup Your Store</h3>
-                  <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.8)">Fill in the details below to get started</p>
+                  <p class="text-xs mt-0.5" style="color:rgba(255,255,255,0.8)">
+                    Fill in the details below to get started
+                  </p>
                 </div>
               </div>
 
@@ -677,132 +623,134 @@ function stockClass(level: string) {
             </div>
           </div>
 
-          <!-- Form Body -->
-          <form @submit.prevent="submitStoreSetup" class="px-6 py-5 space-y-4 bg-white">
-            <!-- Store Name -->
-            <div>
-              <label for="store_name" class="block text-sm font-semibold text-gray-800 mb-1.5">
-                Store Name <span class="text-red-500">*</span>
-              </label>
-              <input
-                id="store_name"
-                v-model="form.store_name"
-                type="text"
-                required
-                placeholder="e.g. Maria's Sari-Sari Store"
-                :class="[
-                  'w-full rounded-xl border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition',
-                  form.errors.store_name
-                    ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
-                    : 'border-gray-200 bg-gray-50 focus:bg-white'
-                ]"
-              />
-              <InputError :message="form.errors.store_name" class="mt-1" />
-            </div>
-
-            <!-- Domain Slug -->
-            <div>
-              <label for="domain_slug" class="block text-sm font-semibold text-gray-800 mb-1.5">
-                Web Address (Domain Alias) <span class="text-red-500">*</span>
-              </label>
-              <div class="relative flex items-center">
+          <!-- Body (SCROLLABLE) -->
+          <div class="overflow-y-auto px-6 py-5">
+            <form @submit.prevent="submitStoreSetup" class="space-y-4">
+              <!-- Store Name -->
+              <div>
+                <label for="store_name" class="block text-sm font-semibold text-gray-800 mb-1.5">
+                  Store Name <span class="text-red-500">*</span>
+                </label>
                 <input
-                  id="domain_slug"
-                  v-model="form.domain_slug"
+                  id="store_name"
+                  v-model="form.store_name"
                   type="text"
                   required
-                  placeholder="mariastore"
-                  class="w-full rounded-l-xl border border-gray-200 border-r-0 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition"
+                  placeholder="e.g. Maria's Sari-Sari Store"
+                  :class="[
+                    'w-full rounded-xl border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition',
+                    form.errors.store_name
+                      ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20'
+                      : 'border-gray-200 bg-gray-50 focus:bg-white'
+                  ]"
                 />
-                <span class="inline-flex items-center px-3 py-2.5 rounded-r-xl border border-l-0 border-gray-200 bg-gray-100 text-gray-500 text-sm">
-                  .storekoto.test
-                </span>
+                <InputError :message="form.errors.store_name" class="mt-1" />
               </div>
-              <p class="text-xs text-gray-500 mt-1">Letters, numbers, and hyphens only.</p>
-              <InputError :message="form.errors.domain_slug" class="mt-1" />
-            </div>
 
-            <!-- Address -->
-            <div>
-              <label for="address" class="block text-sm font-semibold text-gray-800 mb-1.5">
-                Address <span class="text-red-500">*</span>
-              </label>
-              <textarea
-                id="address"
-                v-model="form.address"
-                required
-                placeholder="e.g. 123 Main Street, Barangay San Isidro"
-                rows="2"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition resize-none"
-              ></textarea>
-              <InputError :message="form.errors.address" class="mt-1" />
-            </div>
-
-            <!-- City + Phone -->
-            <div class="grid grid-cols-2 gap-3">
+              <!-- Domain Slug -->
               <div>
-                <label for="city" class="block text-sm font-semibold text-gray-800 mb-1.5">City</label>
+                <label for="domain_slug" class="block text-sm font-semibold text-gray-800 mb-1.5">
+                  Web Address (Domain Alias) <span class="text-red-500">*</span>
+                </label>
+                <div class="relative flex items-center">
+                  <input
+                    id="domain_slug"
+                    v-model="form.domain_slug"
+                    type="text"
+                    required
+                    placeholder="mariastore"
+                    class="w-full rounded-l-xl border border-gray-200 border-r-0 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition"
+                  />
+                  <span class="inline-flex items-center px-3 py-2.5 rounded-r-xl border border-l-0 border-gray-200 bg-gray-100 text-gray-500 text-sm">
+                    .storekoto.test
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Letters, numbers, and hyphens only.</p>
+                <InputError :message="form.errors.domain_slug" class="mt-1" />
+              </div>
+
+              <!-- Address -->
+              <div>
+                <label for="address" class="block text-sm font-semibold text-gray-800 mb-1.5">
+                  Address <span class="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="address"
+                  v-model="form.address"
+                  required
+                  placeholder="e.g. 123 Main Street, Barangay San Isidro"
+                  rows="2"
+                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition resize-none"
+                ></textarea>
+                <InputError :message="form.errors.address" class="mt-1" />
+              </div>
+
+              <!-- City + Phone -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label for="city" class="block text-sm font-semibold text-gray-800 mb-1.5">City</label>
+                  <input
+                    id="city"
+                    v-model="form.city"
+                    type="text"
+                    placeholder="e.g. Quezon City"
+                    class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition"
+                  />
+                  <InputError :message="form.errors.city" class="mt-1" />
+                </div>
+                <div>
+                  <label for="phone" class="block text-sm font-semibold text-gray-800 mb-1.5">Phone</label>
+                  <input
+                    id="phone"
+                    v-model="form.phone"
+                    type="tel"
+                    placeholder="+63 912 345 6789"
+                    class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition"
+                  />
+                  <InputError :message="form.errors.phone" class="mt-1" />
+                </div>
+              </div>
+
+              <!-- Operating Hours -->
+              <div>
+                <label for="operating_hours" class="block text-sm font-semibold text-gray-800 mb-1.5">
+                  Operating Hours
+                </label>
                 <input
-                  id="city"
-                  v-model="form.city"
+                  id="operating_hours"
+                  v-model="form.operating_hours"
                   type="text"
-                  placeholder="e.g. Quezon City"
+                  placeholder="e.g. Mon–Sat 8AM–8PM"
                   class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition"
                 />
-                <InputError :message="form.errors.city" class="mt-1" />
+                <InputError :message="form.errors.operating_hours" class="mt-1" />
               </div>
-              <div>
-                <label for="phone" class="block text-sm font-semibold text-gray-800 mb-1.5">Phone</label>
-                <input
-                  id="phone"
-                  v-model="form.phone"
-                  type="tel"
-                  placeholder="+63 912 345 6789"
-                  class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition"
-                />
-                <InputError :message="form.errors.phone" class="mt-1" />
+
+              <!-- Actions -->
+              <div class="border-t border-gray-100 pt-3 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  @click="closeStoreSetupModal"
+                  class="px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  :disabled="form.processing"
+                  class="px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  style="background:#245c4a"
+                >
+                  <svg v-if="form.processing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span>{{ form.processing ? 'Creating...' : 'Create Store' }}</span>
+                </button>
               </div>
-            </div>
-
-            <!-- Operating Hours -->
-            <div>
-              <label for="operating_hours" class="block text-sm font-semibold text-gray-800 mb-1.5">
-                Operating Hours
-              </label>
-              <input
-                id="operating_hours"
-                v-model="form.operating_hours"
-                type="text"
-                placeholder="e.g. Mon–Sat 8AM–8PM"
-                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition"
-              />
-              <InputError :message="form.errors.operating_hours" class="mt-1" />
-            </div>
-
-            <!-- Actions -->
-            <div class="border-t border-gray-100 pt-3 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                @click="closeStoreSetupModal"
-                class="px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                :disabled="form.processing"
-                class="px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                style="background:#245c4a"
-              >
-                <svg v-if="form.processing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <span>{{ form.processing ? 'Creating...' : 'Create Store' }}</span>
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </Transition>

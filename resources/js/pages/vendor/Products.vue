@@ -316,7 +316,7 @@ function deleteProduct(id: number) {
                 <tr
                   v-for="product in filteredProducts"
                   :key="product.id"
-                  class="border-b border-border last:border-0 transition-colors hover:bg-accent"
+                  class="border-b border-border last:border-0 transition-colors hover:bg-gray-50"
                 >
                   <td class="px-5 py-4">
                     <div class="flex items-center gap-3">
@@ -335,17 +335,17 @@ function deleteProduct(id: number) {
                     </div>
                   </td>
 
-                  <td class="px-5 py-4 text-sm text-muted-foreground">
+                  <td class="px-5 py-4 text-sm text-slate-600">
                     {{ product.description || '—' }}
                   </td>
 
-                  <td class="px-5 py-4 whitespace-nowrap text-sm font-semibold text-foreground">
+                  <td class="px-5 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
                     ₱{{ Number(product.price).toFixed(2) }}
                   </td>
 
                   <td class="px-5 py-4 whitespace-nowrap">
                     <div class="flex items-center gap-2">
-                      <span class="text-sm font-semibold text-foreground">{{ product.stock }}</span>
+                      <span class="text-sm font-semibold text-slate-900">{{ product.stock }}</span>
                       <span
                         class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full"
                         :class="stockBadge(product.stock).cls"
