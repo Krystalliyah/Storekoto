@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import VendorLayout from '@/layouts/VendorLayout.vue';
+import { ref, onBeforeUnmount } from 'vue';
 
 const props = defineProps<{
     products: {
@@ -12,6 +12,7 @@ const props = defineProps<{
             price: number;
             stock: number;
             created_at: string;
+            image_path?: string | null;
         }>;
     };
 }>();
@@ -24,11 +25,45 @@ const form = useForm({
     description: '',
     price: 0,
     stock: 0,
+    image: null as File | null,
+    _method: null as null | 'put',
 });
+
+const imagePreviewUrl = ref<string | null>(null);
+const imageInputRef = ref<HTMLInputElement | null>(null);
+
+function onImageChange(e: Event) {
+    const target = e.target as HTMLInputElement;
+    const file = target.files?.[0] ?? null;
+
+    // reset
+    form.image = null;
+    if (imagePreviewUrl.value) URL.revokeObjectURL(imagePreviewUrl.value);
+    imagePreviewUrl.value = null;
+
+    if (!file) return;
+
+    // basic client-side guard (optional)
+    if (!file.type.startsWith('image/')) return;
+
+    form.image = file;
+    imagePreviewUrl.value = URL.createObjectURL(file);
+}
+
+function removeSelectedImage() {
+    form.image = null;
+
+    if (imagePreviewUrl.value) URL.revokeObjectURL(imagePreviewUrl.value);
+    imagePreviewUrl.value = null;
+
+    // clear file input
+    if (imageInputRef.value) imageInputRef.value.value = '';
+}
 
 function openCreateModal() {
     editingProduct.value = null;
     form.reset();
+    removeSelectedImage();
     showModal.value = true;
 }
 
@@ -38,6 +73,15 @@ function openEditModal(product: any) {
     form.description = product.description || '';
     form.price = product.price;
     form.stock = product.stock;
+
+    // clear any previously selected local file preview
+    removeSelectedImage();
+
+    // show existing image from DB (if present)
+    if (product.image_path) {
+        imagePreviewUrl.value = `/storage/${product.image_path}`;
+    }
+
     showModal.value = true;
 }
 
@@ -45,18 +89,25 @@ function closeModal() {
     showModal.value = false;
     form.reset();
     editingProduct.value = null;
+
+    // clear preview
+    removeSelectedImage();
 }
 
 function submit() {
-    if (editingProduct.value) {
-        form.put(`/vendor/products/${editingProduct.value.id}`, {
-            onSuccess: () => closeModal(),
-        });
-    } else {
-        form.post('/vendor/products', {
-            onSuccess: () => closeModal(),
-        });
-    }
+  if (editingProduct.value) {
+    form._method = 'put';
+    form.post(`/vendor/products/${editingProduct.value.id}`, {
+      forceFormData: true,
+      onSuccess: () => closeModal(),
+      onFinish: () => (form._method = null),
+    });
+  } else {
+    form.post('/vendor/products', {
+      forceFormData: true,
+      onSuccess: () => closeModal(),
+    });
+  }
 }
 
 function deleteProduct(id: number) {
@@ -64,6 +115,13 @@ function deleteProduct(id: number) {
         router.delete(`/vendor/products/${id}`);
     }
 }
+
+onBeforeUnmount(() => {
+    if (imagePreviewUrl.value?.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreviewUrl.value);
+    }
+});
+
 </script>
 
 <template>
@@ -86,6 +144,7 @@ function deleteProduct(id: number) {
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Image</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
@@ -95,6 +154,9 @@ function deleteProduct(id: number) {
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         <tr v-for="product in products.data" :key="product.id">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <img v-if="product.image_path" :src="`/storage/${product.image_path}`" class="h-12 w-12 object-cover rounded">
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {{ product.name }}
                             </td>
@@ -183,6 +245,58 @@ function deleteProduct(id: number) {
                                 class="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             />
                         </div>
+
+                        <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Product Image
+                        </label>
+
+                        <div class="flex items-start gap-4">
+                        <!-- Preview Box -->
+                        <div class="w-28 h-28 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
+                        <img
+                            v-if="imagePreviewUrl"
+                            :src="imagePreviewUrl"
+                            class="w-full h-full object-cover"
+                            alt="Preview"
+                        />
+                        <div v-else class="text-xs text-gray-400 text-center px-2">
+                            No image
+                        </div>
+                    </div>
+
+        <!-- Controls -->
+        <div class="flex-1 space-y-2">
+            <input
+                ref="imageInputRef"
+                type="file"
+                accept="image/*"
+                @change="onImageChange"
+                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
+                       file:rounded-md file:border-0 file:text-sm file:font-semibold
+                       file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+            />
+
+            <div class="flex items-center gap-2">
+                <button
+                    type="button"
+                    @click="removeSelectedImage"
+                    class="px-3 py-2 text-sm border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                    Remove
+                </button>
+
+                <p class="text-xs text-gray-500">
+                    JPG/PNG/WEBP up to 2MB.
+                </p>
+            </div>
+
+            <p v-if="form.errors.image" class="text-xs text-red-600">
+                {{ form.errors.image }}
+            </p>
+        </div>
+    </div>
+</div>
 
                         <div class="flex justify-end space-x-2 pt-4">
                             <button 

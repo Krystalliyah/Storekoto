@@ -30,7 +30,13 @@ class TenantStoreAdminSeeder extends Seeder
                 'email' => $email,
                 'password' => Hash::make('password'),
                 'is_admin' => true,
+                'email_verified_at' => now(),
             ]);
+        }
+        
+        if (!$user->email_verified_at) {
+            $user->email_verified_at = now();
+            $user->save();
         }
 
         if (! $user->hasRole('vendor')) {

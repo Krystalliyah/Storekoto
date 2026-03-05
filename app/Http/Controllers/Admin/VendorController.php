@@ -58,7 +58,7 @@ class VendorController extends Controller
         dispatch_sync(new MigrateDatabase($tenant));
 
         // Create the tenant admin user from the vendor email
-        $this->copyVendorUserToTenant($tenant);
+        //$this->copyVendorUserToTenant($tenant);
 
         // Run tenant-specific seeders (role table + admin user).
         $tenant->run(function () {
