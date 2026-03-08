@@ -2,7 +2,6 @@
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import VendorLayout from '@/layouts/VendorLayout.vue';
-import { ref, onBeforeUnmount } from 'vue';
 
 type Product = {
   id: number;
@@ -140,12 +139,6 @@ function deleteProduct(id: number) {
     router.delete(`/vendor/products/${id}`);
   }
 }
-
-onBeforeUnmount(() => {
-    if (imagePreviewUrl.value?.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreviewUrl.value);
-    }
-});
 
 </script>
 
