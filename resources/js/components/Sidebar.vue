@@ -1,6 +1,16 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { useSidebar } from '@/composables/useSidebar';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 defineProps<{
     role: 'admin' | 'vendor' | 'customer';
@@ -8,7 +18,13 @@ defineProps<{
 
 const { isCollapsed } = useSidebar();
 
-const logout = () => {
+const showLogoutModal = ref(false);
+
+const openLogoutModal = () => {
+    showLogoutModal.value = true;
+};
+
+const confirmLogout = () => {
     router.post('/logout');
 };
 </script>
@@ -42,7 +58,7 @@ const logout = () => {
                     </svg>
                     <span v-if="!isCollapsed">Settings</span>
                 </Link>
-                <button @click="logout" class="menu-item logout-btn" :title="isCollapsed ? 'Logout' : ''">
+                <button @click="openLogoutModal" class="menu-item logout-btn" :title="isCollapsed ? 'Logout' : ''">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -51,6 +67,25 @@ const logout = () => {
                 </button>
             </div>
         </div>
+
+        <Dialog v-model:open="showLogoutModal">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Confirm Logout</DialogTitle>
+                    <DialogDescription>
+                        Are you sure you want to log out of your account?
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="gap-2">
+                    <Button variant="outline" @click="showLogoutModal = false">
+                        Cancel
+                    </Button>
+                    <Button variant="destructive" @click="confirmLogout">
+                        Log out
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </nav>
 </template>
 

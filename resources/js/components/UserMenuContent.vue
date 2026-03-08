@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { LogOut, Settings } from 'lucide-vue-next';
 import {
@@ -7,6 +8,15 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import UserInfo from '@/components/UserInfo.vue';
 import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
@@ -16,11 +26,18 @@ type Props = {
     user: User;
 };
 
-const handleLogout = () => {
-    router.flushAll();
+defineProps<Props>();
+
+const showLogoutModal = ref(false);
+
+const openLogoutModal = () => {
+    showLogoutModal.value = true;
 };
 
-defineProps<Props>();
+const confirmLogout = () => {
+    router.flushAll();
+    router.post(logout());
+};
 </script>
 
 <template>
@@ -39,16 +56,27 @@ defineProps<Props>();
         </DropdownMenuItem>
     </DropdownMenuGroup>
     <DropdownMenuSeparator />
-    <DropdownMenuItem :as-child="true">
-        <Link
-            class="block w-full cursor-pointer"
-            :href="logout()"
-            @click="handleLogout"
-            as="button"
-            data-test="logout-button"
-        >
-            <LogOut class="mr-2 h-4 w-4" />
-            Log out
-        </Link>
+    <DropdownMenuItem @click="openLogoutModal">
+        <LogOut class="mr-2 h-4 w-4" />
+        Log out
     </DropdownMenuItem>
+
+    <Dialog v-model:open="showLogoutModal">
+        <DialogContent class="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Confirm Logout</DialogTitle>
+                <DialogDescription>
+                    Are you sure you want to log out of your account?
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter class="gap-2">
+                <Button variant="outline" @click="showLogoutModal = false">
+                    Cancel
+                </Button>
+                <Button variant="destructive" @click="confirmLogout">
+                    Log out
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 </template>
