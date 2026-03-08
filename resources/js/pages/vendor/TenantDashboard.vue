@@ -1,7 +1,17 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { BuildingStorefrontIcon, ChartBarIcon, CubeIcon, ClipboardDocumentListIcon, UsersIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/vue/24/outline';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 const props = defineProps<{
     tenant: { id: string; name: string };
@@ -16,7 +26,15 @@ const quickLinks = [
     { label: 'Store Settings',href: '/store-settings', icon: Cog6ToothIcon,              color: '#64748b' },
 ];
 
-const logout = () => router.post('/logout');
+const showLogoutModal = ref(false);
+
+const openLogoutModal = () => {
+    showLogoutModal.value = true;
+};
+
+const confirmLogout = () => {
+    router.post('/logout');
+};
 </script>
 
 <template>
@@ -37,7 +55,7 @@ const logout = () => router.post('/logout');
                 </a>
             </nav>
 
-            <button @click="logout" class="logout-btn">
+            <button @click="openLogoutModal" class="logout-btn">
                 <ArrowRightOnRectangleIcon class="nav-icon" />
                 Logout
             </button>
@@ -64,6 +82,25 @@ const logout = () => router.post('/logout');
                 </a>
             </div>
         </main>
+
+        <Dialog v-model:open="showLogoutModal">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Confirm Logout</DialogTitle>
+                    <DialogDescription>
+                        Are you sure you want to log out of your account?
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="gap-2">
+                    <Button variant="outline" @click="showLogoutModal = false">
+                        Cancel
+                    </Button>
+                    <Button variant="destructive" @click="confirmLogout">
+                        Log out
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>
 
