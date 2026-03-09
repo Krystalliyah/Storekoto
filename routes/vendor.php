@@ -15,7 +15,6 @@ Route::middleware(['auth', 'verified', 'role:vendor', 'vendor.is_approved'])->pr
     Route::get('/inventory', fn() => inertia('vendor/Inventory'))->name('inventory');
     Route::get('/orders', fn() => inertia('vendor/Orders'))->name('orders');
     Route::get('/store-settings', fn() => inertia('vendor/StoreSettings'))->name('store.settings');
-    Route::get('/staff', fn() => inertia('vendor/Staff'))->name('staff');
     Route::get('/expenses', fn() => inertia('vendor/Expenses'))->name('expenses');
     Route::get('/analytics', fn() => inertia('vendor/Analytics'))->name('analytics');
 });

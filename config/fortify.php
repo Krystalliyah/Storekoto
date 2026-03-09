@@ -102,8 +102,8 @@ return [
     */
 
     'middleware' => [
-        'web',
         \App\Http\Middleware\InitializeTenancyIfTenantDomain::class,
+        'web',
     ],
 
     /*

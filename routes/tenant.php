@@ -27,8 +27,8 @@ use App\Http\Controllers\Vendor\ProductController;
 use App\Models\Product;
 
 Route::middleware([
-    'web',
     InitializeTenancyByDomain::class,
+    'web',
     PreventAccessFromCentralDomains::class,
     'consume-tenant-auth-token',
 ])->group(function () {
@@ -43,14 +43,14 @@ Route::middleware([
     // Authentication pages on tenant
     Route::get('/login', function () {
         return Inertia::render('auth/LoginAdminTenant');
-    })->name('tenant.login');
+    })->name('login');
 
     Route::get('/vendor-admin/login', function () {
         return Inertia::render('auth/LoginAdminTenant');
     });
 
-    // Basic vendor routes (accessible to any vendor account)
-    Route::middleware(['auth', 'verified', 'role:vendor'])->prefix('vendor')->name('vendor.')->group(function () {
+    // Basic vendor routes (accessible to any vendor account or staff)
+    Route::middleware(['auth', 'verified', 'role:vendor|staff'])->prefix('vendor')->name('vendor.')->group(function () {
         Route::get('/dashboard', function() {
             // Get products from THIS tenant's database
             $products = Product::latest()->take(10)->get();
@@ -69,20 +69,30 @@ Route::middleware([
         Route::post('/store/setup', [StoreSetupController::class, 'store'])->name('store.create');
     });
 
-    Route::middleware(['auth', 'verified', 'role:vendor', 'vendor.is_approved'])->prefix('vendor')->name('vendor.')->group(function () {
-        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-        Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-        Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
-        Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::middleware(['auth', 'verified', 'role:vendor|staff', 'vendor.is_approved'])->prefix('vendor')->name('vendor.')->group(function () {
+        // Products management
+        Route::middleware('permission:manage-products')->group(function() {
+            Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+            Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+            Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+            Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+        });
         
-        Route::get('/inventory', fn() => inertia('vendor/Inventory'))->name('inventory');
-        Route::get('/orders', fn() => inertia('vendor/Orders'))->name('orders');
+        Route::get('/inventory', fn() => inertia('vendor/Inventory'))->name('inventory')->middleware('permission:manage-inventory');
+        Route::get('/orders', fn() => inertia('vendor/Orders'))->name('orders')->middleware('permission:manage-orders');
 
-        // admin-only
-        Route::get('/store-settings', fn() => inertia('vendor/StoreSettings'))->name('store.settings')->middleware('vendor.is_admin');
-        Route::get('/staff', fn() => inertia('vendor/Staff'))->name('staff')->middleware('vendor.is_admin');
+        // Management routes
+        Route::get('/store-settings', fn() => inertia('vendor/StoreSettings'))->name('store.settings')->middleware('permission:manage-store-settings');
         
-        Route::get('/expenses', fn() => inertia('vendor/Expenses'))->name('expenses');
-        Route::get('/analytics', fn() => inertia('vendor/Analytics'))->name('analytics');
+        // Staff Management
+        Route::prefix('staff')->name('staff.')->middleware('permission:manage-staff')->group(function() {
+            Route::get('', [App\Http\Controllers\Vendor\StaffManagementController::class, 'index'])->name('index');
+            Route::post('', [App\Http\Controllers\Vendor\StaffManagementController::class, 'store'])->name('store');
+            Route::put('/{user}/permissions', [App\Http\Controllers\Vendor\StaffManagementController::class, 'updatePermissions'])->name('update-permissions');
+            Route::delete('/{user}', [App\Http\Controllers\Vendor\StaffManagementController::class, 'destroy'])->name('destroy');
+        });
+        
+        Route::get('/expenses', fn() => inertia('vendor/Expenses'))->name('expenses')->middleware('permission:view-expenses');
+        Route::get('/analytics', fn() => inertia('vendor/Analytics'))->name('analytics')->middleware('permission:view-analytics');
     });
 });

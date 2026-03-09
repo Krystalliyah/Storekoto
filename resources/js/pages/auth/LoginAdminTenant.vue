@@ -8,7 +8,7 @@ import AuthBase from '@/layouts/AuthLayout.vue'
 defineProps<{ status?: string }>()
 
 const form = useForm({
-  login_id: '',
+  email: '',
   password: '',
   remember: false,
 })
@@ -34,9 +34,9 @@ function submit() {
 
     <form @submit.prevent="submit" class="it-form">
       <div class="it-field">
-        <Label for="login_id" class="it-label">Login ID</Label>
-        <Input id="login_id" v-model="form.login_id" type="text" required autofocus />
-        <InputError :message="form.errors.login_id" class="it-field-error" />
+        <Label for="email" class="it-label">Login ID</Label>
+        <Input id="email" v-model="form.email" type="text" required autofocus />
+        <InputError :message="form.errors.email" class="it-field-error" />
       </div>
 
       <div class="it-field">

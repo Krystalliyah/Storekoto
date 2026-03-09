@@ -22,8 +22,8 @@ class EnsureVendorIsApproved
             abort(401);
         }
 
-        // Must be a vendor
-        if (! $user->hasRole('vendor')) {
+        // Must be a vendor or staff member
+        if (! $user->hasRole(['vendor', 'staff'])) {
             abort(403, 'Unauthorized action.');
         }
 
