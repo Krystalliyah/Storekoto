@@ -12,14 +12,15 @@ class SetTenantSessionConnection
      */
     public function handle(TenancyInitialized $event): void
     {
-        // Switch session storage to the tenant database connection
+        // We will keep sessions in the central database to ensure stability 
+        // across subdomains and prevent 419 CSRF issues.
+        
+        /*
         config(['session.connection' => 'tenant']);
-
-        // Use a tenant-specific session cookie name for extra isolation
-        // This prevents any accidental cookie reuse across tenants
         $currentTenant = tenant();
         if ($currentTenant) {
             config(['session.cookie' => 'storekoto_session_' . $currentTenant->id]);
         }
+        */
     }
 }

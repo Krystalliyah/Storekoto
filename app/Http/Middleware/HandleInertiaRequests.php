@@ -39,8 +39,13 @@ class HandleInertiaRequests extends Middleware
         $hasStore = false;
         $storeIsApproved = false;
 
-        // Check if vendor has a store (tenant)
-        if ($user && $user->hasRole('vendor')) {
+        // Check store status
+        if (function_exists('tenant') && tenant()) {
+            // If we are on a subdomain, the store definitively exists and is approved
+            $hasStore = true;
+            $storeIsApproved = true;
+        } elseif ($user && $user->hasRole('vendor')) {
+            // Central domain check for vendors
             $tenant = \App\Models\Tenant::where('user_id', $user->id)->first();
             if ($tenant) {
                 $hasStore = true;
@@ -54,8 +59,10 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user,
                 'roles' => $user ? $user->getRoleNames() : [],
+                'permissions' => $user ? $user->getAllPermissions()->pluck('name') : [],
                 'hasStore' => $hasStore,
                 'storeIsApproved' => $storeIsApproved,
+                'tenant_id' => function_exists('tenant') && tenant() ? tenant()->getTenantKey() : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

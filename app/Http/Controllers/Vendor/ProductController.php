@@ -46,6 +46,15 @@ class ProductController extends Controller
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
+        // Check if price is being modified and if user has permission
+        if ($product->price != $validated['price'] && !$request->user()->can('edit-prices') && !$request->user()->hasRole('vendor')) {
+            return back()->withErrors(['price' => 'You do not have permission to modify prices.']);
+        }
+
+        if ($request->hasFile('image')) {
+            $validated['image_path'] = $request->file('image')->store('products', 'public');
+        }
+
         $product->update($validated);
 
         return back()->with('success', 'Product updated successfully!');
