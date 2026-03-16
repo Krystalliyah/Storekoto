@@ -144,7 +144,7 @@ const filteredStores = computed(() => {
                         <DropdownMenuTrigger as-child>
                             <button
                                 type="button"
-                                class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-muted transition"
+                                class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-xl hover:bg-muted transition"
                             >
                                 <ChevronDown class="w-4 h-4 opacity-60" />
                             </button>

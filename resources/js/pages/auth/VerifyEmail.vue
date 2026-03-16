@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import TextLink from '@/components/TextLink.vue';
+import { Link } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import AuthLayout from '@/layouts/AuthLayout.vue';
 import { logout } from '@/routes';
 import { send } from '@/routes/verification';
 
@@ -13,37 +12,66 @@ defineProps<{
 </script>
 
 <template>
-    <AuthLayout
-        title="Verify email"
-        description="Please verify your email address by clicking on the link we just emailed to you."
-    >
-        <Head title="Email verification" />
+    <Head title="Email verification" />
 
-        <div
-            v-if="status === 'verification-link-sent'"
-            class="mb-4 text-center text-sm font-medium text-green-600"
-        >
-            A new verification link has been sent to the email address you
-            provided during registration.
-        </div>
+    <div class="it-verify-root">
+        <div class="it-verify-card">
+            <div class="it-brand">
+                <div class="it-brand-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2.5"
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
+                    </svg>
+                </div>
+                <span class="it-brand-name">iTinda</span>
+            </div>
 
-        <Form
-            v-bind="send.form()"
-            class="space-y-6 text-center"
-            v-slot="{ processing }"
-        >
-            <Button :disabled="processing" variant="secondary">
-                <Spinner v-if="processing" />
-                Resend verification email
-            </Button>
+            <h1 class="it-title">Verify your email</h1>
+            <p class="it-description">
+                We sent a verification email to your inbox. If you did not receive it, resend below.
+            </p>
 
-            <TextLink
-                :href="logout()"
-                as="button"
-                class="mx-auto block text-sm"
+            <div
+                v-if="status === 'verification-link-sent'"
+                class="it-status"
             >
-                Log out
-            </TextLink>
-        </Form>
-    </AuthLayout>
+                A new verification link has been sent to your email address.
+            </div>
+
+            <Form
+                v-bind="send.form()"
+                class="it-actions"
+                v-slot="{ processing }"
+            >
+                <Button :disabled="processing" class="it-resend-btn">
+                    <Spinner v-if="processing" class="it-spinner" />
+                    <span>
+                        {{
+                            processing
+                                ? 'Sending...'
+                                : status === 'verification-link-sent'
+                                  ? 'Resend verification email'
+                                  : 'Send verification email'
+                        }}
+                    </span>
+                </Button>
+
+                <Link
+                    :href="logout()"
+                    as="button"
+                    class="it-logout-link"
+                >
+                    Log out
+                </Link>
+            </Form>
+        </div>
+    </div>
 </template>
+
+<style scoped>
+@import '../../../css/auth-verify.css';
+</style>

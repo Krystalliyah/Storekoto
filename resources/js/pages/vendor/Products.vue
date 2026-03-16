@@ -209,7 +209,7 @@ function deleteProduct(id: number) {
 
         <button
           @click="openCreateModal"
-          class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-md text-white transition-opacity hover:opacity-90"
+          class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90"
           style="background:#245c4a"
         >
           + Add Product
@@ -243,7 +243,7 @@ function deleteProduct(id: number) {
           <input
             v-model="search"
             placeholder="Search name, description, category, or barcode..."
-            class="mt-2 w-full px-3 py-2 rounded-md border border-border bg-white text-foreground focus:outline-none focus:ring-2"
+            class="mt-2 w-full px-3 py-2 rounded-xl border border-border bg-white text-foreground focus:outline-none focus:ring-2"
             style="--tw-ring-color: rgba(36,92,74,.35);"
           />
           <p class="text-xs text-muted-foreground mt-2">
@@ -270,7 +270,7 @@ function deleteProduct(id: number) {
 
         <button
           @click="openCreateModal"
-          class="mt-4 inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-md text-white transition-opacity hover:opacity-90"
+          class="mt-4 inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90"
           style="background:#245c4a"
         >
           + Add Product
@@ -327,14 +327,14 @@ function deleteProduct(id: number) {
             <div class="mt-3 flex items-center justify-end gap-2">
               <button
                 @click="openEditModal(product)"
-                class="inline-flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-md border border-border bg-white hover:bg-accent"
+                class="inline-flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-xl border border-border bg-white hover:bg-accent"
                 style="color:#245c4a"
               >
                 Edit
               </button>
               <button
                 @click="deleteProduct(product.id)"
-                class="inline-flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-md border"
+                class="inline-flex items-center justify-center text-xs font-semibold px-3 py-1.5 rounded-xl border"
                 style="border-color:#fecdd3;background:#fff1f2;color:#9f1239"
               >
                 Delete
@@ -382,7 +382,7 @@ function deleteProduct(id: number) {
                 <tr
                   v-for="product in filteredProducts"
                   :key="product.id"
-                  class="border-b border-border last:border-0 transition-colors hover:bg-gray-50"
+                  class="border-b border-border last:border-0 transition-colors hover:bg-[#F9FBF9]"
                 >
                   <td class="px-5 py-4">
                     <div class="flex items-center gap-3">
@@ -540,8 +540,8 @@ function deleteProduct(id: number) {
               <button
                 type="button"
                 @click="closeModal"
-                class="ml-4 flex-shrink-0 w-7 h-7 rounded-md flex items-center justify-center transition-colors hover:bg-gray-100"
-                style="color:#6b7280"
+                class="ml-4 flex-shrink-0 w-7 h-7 rounded-xl flex items-center justify-center transition-colors hover:bg-[#F3F7F5]"
+                style="color:#245C4A"
               >
                 ✕
               </button>
@@ -569,7 +569,7 @@ function deleteProduct(id: number) {
                       type="file"
                       accept="image/*"
                       @change="onPickImage"
-                      class="block w-full text-xs text-slate-600 file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-white file:text-slate-700 file:border file:border-border hover:file:bg-gray-50"
+                      class="block w-full text-xs text-slate-600 file:mr-3 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white file:text-slate-700 file:border file:border-border hover:file:bg-gray-50"
                     />
                     <p class="text-xs text-muted-foreground mt-1">JPG/PNG recommended (max 2MB).</p>
                     <p v-if="form.errors.image" class="text-xs mt-1" style="color:#9f1239">
@@ -587,7 +587,7 @@ function deleteProduct(id: number) {
                     v-model="form.product_name"
                     required
                     placeholder="e.g. Chocolate Bar"
-                    class="w-full px-3 py-2 rounded-md border border-border bg-white focus:outline-none focus:ring-2 text-sm"
+                    class="w-full px-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm"
                     style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
                   />
                   <p v-if="form.errors.product_name" class="text-xs mt-1" style="color:#9f1239">
@@ -607,7 +607,7 @@ function deleteProduct(id: number) {
                         type="button"
                         ref="categoryBtnEl"
                         @click="openCategoryDropdown"
-                        class="w-full flex items-center justify-between px-3 py-2 rounded-md border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
+                        class="w-full flex items-center justify-between px-3 py-2 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
                         :class="form.errors.category_id ? 'border-red-300' : 'border-border'"
                         style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
                       >
@@ -636,7 +636,7 @@ function deleteProduct(id: number) {
                             :key="category.id"
                             type="button"
                             @click="selectCategory(category.id)"
-                            class="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-gray-50"
+                            class="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-[#F9FBF9]"
                             :class="form.category_id === category.id ? 'font-semibold' : ''"
                             :style="form.category_id === category.id ? 'color:#245c4a' : 'color:#111827'"
                           >
@@ -678,7 +678,7 @@ function deleteProduct(id: number) {
                     <input
                       v-model="form.barcode"
                       placeholder="e.g. 4901234567890"
-                      class="w-full px-3 py-2 rounded-md border border-border bg-white focus:outline-none focus:ring-2 text-sm"
+                      class="w-full px-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm"
                       style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
                     />
                     <p v-if="form.errors.barcode" class="text-xs mt-1" style="color:#9f1239">
@@ -696,7 +696,7 @@ function deleteProduct(id: number) {
                     v-model="form.description"
                     rows="3"
                     placeholder="Brief product description (optional)"
-                    class="w-full px-3 py-2 rounded-md border border-border bg-white focus:outline-none focus:ring-2 text-sm resize-none"
+                    class="w-full px-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm resize-none"
                     style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
                   />
                   <p v-if="form.errors.description" class="text-xs mt-1" style="color:#9f1239">
@@ -734,7 +734,7 @@ function deleteProduct(id: number) {
               <button
                 type="button"
                 @click="closeModal"
-                class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-md border border-border bg-white hover:bg-gray-50 transition-colors"
+                class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl border border-border bg-white hover:bg-[#F9FBF9] transition-colors"
                 style="color: #111827;"
               >
                 Cancel
@@ -744,7 +744,7 @@ function deleteProduct(id: number) {
                 type="submit"
                 form="product-form"
                 :disabled="form.processing"
-                class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-md text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                 style="background:#245c4a"
               >
                 <svg v-if="form.processing" class="animate-spin -ml-0.5 mr-1.5 w-3 h-3 text-white" fill="none" viewBox="0 0 24 24">

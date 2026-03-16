@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { useSidebar } from '@/composables/useSidebar';
 
 const page = usePage();
 const currentPath = computed(() => page.url.split('?')[0]);
+const { isCollapsed, isDrawerMode } = useSidebar();
 
 const isActive = (href: string) => {
     if (href === '/customer/dashboard') return currentPath.value === href;
@@ -24,7 +26,7 @@ const isActive = (href: string) => {
                         d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
             </span>
-            <span class="sidebar-nav-label">Dashboard</span>
+            <span v-show="!isCollapsed || isDrawerMode" class="sidebar-nav-label">Dashboard</span>
         </Link>
 
         <Link
@@ -38,7 +40,7 @@ const isActive = (href: string) => {
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
             </span>
-            <span class="sidebar-nav-label">Find Stores</span>
+            <span v-show="!isCollapsed || isDrawerMode" class="sidebar-nav-label">Find Stores</span>
         </Link>
 
         <Link
@@ -52,7 +54,7 @@ const isActive = (href: string) => {
                         d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
             </span>
-            <span class="sidebar-nav-label">Browse Products</span>
+            <span v-show="!isCollapsed || isDrawerMode" class="sidebar-nav-label">Browse Products</span>
         </Link>
 
         <Link
@@ -66,7 +68,7 @@ const isActive = (href: string) => {
                         d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
             </span>
-            <span class="sidebar-nav-label">My Orders</span>
+            <span v-show="!isCollapsed || isDrawerMode" class="sidebar-nav-label">My Orders</span>
         </Link>
 
         <Link
@@ -80,7 +82,7 @@ const isActive = (href: string) => {
                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
             </span>
-            <span class="sidebar-nav-label">Profile</span>
+            <span v-show="!isCollapsed || isDrawerMode" class="sidebar-nav-label">Profile</span>
         </Link>
     </div>
 </template>

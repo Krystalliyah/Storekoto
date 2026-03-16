@@ -80,25 +80,38 @@ const user = page.props.auth.user;
                         <InputError class="mt-2" :message="errors.email" />
                     </div>
 
-                    <div v-if="mustVerifyEmail && !user.email_verified_at">
-                        <p class="-mt-4 text-sm text-muted-foreground">
+                    <div
+                        v-if="mustVerifyEmail && !user.email_verified_at"
+                        class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3"
+                    >
+                        <p class="text-sm text-amber-800">
                             Your email address is unverified.
-                            <Link
-                                :href="send()"
-                                as="button"
-                                class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
-                            >
-                                Click here to resend the verification email.
-                            </Link>
+                        </p>
+                        <p class="mt-1 text-xs text-amber-700">
+                            We sent you a verification email. If you did not receive it, resend below.
                         </p>
 
-                        <div
-                            v-if="status === 'verification-link-sent'"
-                            class="mt-2 text-sm font-medium text-green-600"
+                        <Form
+                            v-bind="send.form()"
+                            class="mt-3 flex flex-wrap items-center gap-3"
+                            v-slot="{ processing }"
                         >
-                            A new verification link has been sent to your email
-                            address.
-                        </div>
+                            <Button
+                                :disabled="processing"
+                                size="sm"
+                                variant="outline"
+                            >
+                                {{ status === 'verification-link-sent' ? 'Resend verification email' : 'Send verification email' }}
+                            </Button>
+
+                            <span
+                                v-if="status === 'verification-link-sent'"
+                                class="text-xs font-medium text-green-700"
+                            >
+                                A new verification link has been sent to your
+                                email address.
+                            </span>
+                        </Form>
                     </div>
 
                     <div class="flex items-center gap-4">

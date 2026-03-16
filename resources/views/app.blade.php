@@ -1,5 +1,16 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"  @class(['dark' => ($appearance ?? 'system') == 'dark'])>
+@php
+    $isAuthLightOnlyPage = request()->is('login')
+        || request()->is('register')
+        || request()->is('forgot-password')
+        || request()->is('two-factor-challenge')
+        || request()->is('user/confirm-password')
+        || request()->is('reset-password')
+        || request()->is('reset-password/*')
+        || request()->is('email/verify')
+        || request()->is('email/verify/*');
+@endphp
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ! $isAuthLightOnlyPage && ($appearance ?? 'system') == 'dark'])>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,6 +19,12 @@
         <script>
             (function() {
                 const appearance = '{{ $appearance ?? "system" }}';
+                const isAuthLightOnlyPage = {{ $isAuthLightOnlyPage ? 'true' : 'false' }};
+
+                if (isAuthLightOnlyPage) {
+                    document.documentElement.classList.remove('dark');
+                    return;
+                }
 
                 if (appearance === 'system') {
                     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;

@@ -162,8 +162,8 @@ function stockClass(level: string) {
           </div>
 
           <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-50">
-              <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#EDF6F1]">
+              <svg class="w-4 h-4 text-[#245C4A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -177,7 +177,7 @@ function stockClass(level: string) {
         <div class="px-6 pb-6">
           <button
             @click="openStoreSetupModal"
-            class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-md text-sm font-medium text-white transition-opacity hover:opacity-90"
+            class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90"
             style="background:#245c4a"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,15 +256,15 @@ function stockClass(level: string) {
       <!-- Stat cards -->
       <div class="grid grid-cols-4 gap-3">
         <!-- Orders -->
-        <div class="bg-white rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default group">
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-border dark:border-slate-700 shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default group">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,#245c4a,#3d7a5c)"></div>
           <div class="flex items-start justify-between mb-3">
-            <div class="w-9 h-9 rounded-md flex items-center justify-center" style="background:rgba(36,92,74,.1)">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(36,92,74,.1)">
               <svg class="w-4 h-4" style="color:#245c4a" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </div>
-            <span class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0">
+            <span class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/40">
               This month
             </span>
           </div>
@@ -276,15 +276,15 @@ function stockClass(level: string) {
         </div>
 
         <!-- Sales -->
-        <div class="bg-white rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-border dark:border-slate-700 shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,#C5A059,#d9b87a)"></div>
           <div class="flex items-start justify-between mb-3">
-            <div class="w-9 h-9 rounded-md flex items-center justify-center" style="background:rgba(197,160,89,.14)">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:rgba(197,160,89,.14)">
               <svg class="w-4 h-4" style="color:#7a5800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <span class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0">
+            <span class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/40">
               This month
             </span>
           </div>
@@ -298,11 +298,11 @@ function stockClass(level: string) {
         </div>
 
         <!-- Products -->
-        <div class="bg-white rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-border dark:border-slate-700 shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,hsl(197 37% 24%),hsl(197 37% 44%))"></div>
           <div class="flex items-start justify-between mb-3">
-            <div class="w-9 h-9 rounded-md flex items-center justify-center bg-blue-50">
-              <svg class="w-4 h-4 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-[#EDF6F1]">
+              <svg class="w-4 h-4 text-[#245C4A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
             </div>
@@ -318,15 +318,15 @@ function stockClass(level: string) {
         </div>
 
         <!-- Customers -->
-        <div class="bg-white rounded-xl border border-border shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
+        <div class="bg-white dark:bg-slate-800 rounded-xl border border-border dark:border-slate-700 shadow-sm p-4 relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md cursor-default">
           <div class="absolute bottom-0 left-0 right-0 h-[3px]" style="background:linear-gradient(90deg,hsl(12 76% 61%),hsl(27 87% 67%))"></div>
           <div class="flex items-start justify-between mb-3">
-            <div class="w-9 h-9 rounded-md flex items-center justify-center" style="background:hsl(12 76% 61% / 0.1)">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:hsl(12 76% 61% / 0.1)">
               <svg class="w-4 h-4" style="color:hsl(12 76% 38%)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <span class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full" style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0">
+            <span class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-[#f0fdf4] text-[#166534] border border-[#bbf7d0] dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/40">
               This month
             </span>
           </div>
@@ -341,7 +341,7 @@ function stockClass(level: string) {
       <!-- Lower grid -->
       <div class="grid gap-4" style="grid-template-columns:1fr 310px">
         <!-- Recent Orders -->
-        <div class="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+        <div class="bg-white dark:bg-slate-900 rounded-xl border border-border dark:border-slate-700 shadow-sm overflow-hidden">
           <div class="px-5 py-4 flex items-start justify-between border-b border-border">
             <div>
               <h2 class="text-sm font-semibold flex items-center gap-2" style="color:#245c4a">
@@ -570,14 +570,14 @@ function stockClass(level: string) {
             <div class="px-4 py-3 border-t border-border flex items-center justify-end gap-2">
               <a
                 href="/vendor/inventory"
-                class="inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-md border border-border bg-white transition-colors hover:bg-accent !opacity-100"
+                class="inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-xl border border-border bg-white transition-colors hover:bg-accent !opacity-100"
                 style="text-decoration:none; opacity:1 !important; background:hsl(0 0% 9%) !important;"
               >
                 View All
               </a>
               <a
                 href="/vendor/inventory"
-                class="inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-md text-white transition-opacity hover:opacity-90"
+                class="inline-flex items-center justify-center text-xs font-medium px-3 py-1.5 rounded-xl text-white transition-opacity hover:opacity-90"
                 style="background:hsl(0 0% 9%);text-decoration:none"
               >
                 Restock All
@@ -682,7 +682,7 @@ function stockClass(level: string) {
                     placeholder="mariastore"
                     class="w-full rounded-l-xl border border-gray-200 border-r-0 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition"
                   />
-                  <span class="inline-flex items-center px-3 py-2.5 rounded-r-xl border border-l-0 border-gray-200 bg-gray-100 text-gray-500 text-sm">
+                  <span class="inline-flex items-center px-3 py-2.5 rounded-r-xl border border-l-0 border-[#D7E3DC] bg-[#F3F7F5] text-[#70867D] text-sm">
                     .itinda.test
                   </span>
                 </div>
@@ -789,7 +789,7 @@ function stockClass(level: string) {
                 <button
                   type="button"
                   @click="closeStoreSetupModal"
-                  class="px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                  class="px-4 py-2.5 text-sm font-semibold text-[#245C4A] bg-[#F3F7F5] hover:bg-[#E8F0EC] rounded-xl transition-colors"
                 >
                   Cancel
                 </button>

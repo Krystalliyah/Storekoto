@@ -154,7 +154,7 @@ function hasBaseRole(staff: Staff) {
 
         <button
           @click="openAddModal"
-          class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-md text-white transition-opacity hover:opacity-90"
+          class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90"
           style="background:#245c4a"
         >
           + Add Staff
@@ -178,7 +178,7 @@ function hasBaseRole(staff: Staff) {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="member in staff" :key="member.id" class="border-b border-border last:border-0 hover:bg-gray-50 transition-colors">
+              <tr v-for="member in staff" :key="member.id" class="border-b border-border last:border-0 hover:bg-[#F9FBF9] transition-colors">
                 <td class="px-5 py-4">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs" style="background:#245c4a">
@@ -223,9 +223,9 @@ function hasBaseRole(staff: Staff) {
 
       <!-- Add Staff Modal -->
       <Teleport to="body">
-        <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showAddModal = false"></div>
-          <div class="relative w-full max-w-md bg-white rounded-xl shadow-2xl border border-emerald-100 overflow-hidden">
+        <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
+          <div class="absolute inset-0 modal-backdrop" @click="showAddModal = false"></div>
+          <div class="relative w-full max-w-md modal-content rounded-xl shadow-2xl border border-emerald-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-emerald-50 flex justify-between items-center" style="background: #245c4a">
               <h3 class="text-sm font-semibold text-white uppercase tracking-widest">New Staff Account</h3>
               <button @click="showAddModal = false" class="text-emerald-100 hover:text-white transition-colors">✕</button>
@@ -263,9 +263,9 @@ function hasBaseRole(staff: Staff) {
 
       <!-- Permissions Modal -->
       <Teleport to="body">
-        <div v-if="showPermissionsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showPermissionsModal = false"></div>
-          <div class="relative w-full max-w-lg bg-white rounded-xl shadow-2xl border border-emerald-100 overflow-hidden">
+        <div v-if="showPermissionsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
+          <div class="absolute inset-0 modal-backdrop" @click="showPermissionsModal = false"></div>
+          <div class="relative w-full max-w-lg modal-content rounded-xl shadow-2xl border border-emerald-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-emerald-50 flex justify-between items-center" style="background:#245c4a">
               <div>
                 <h3 class="text-sm font-semibold text-white uppercase tracking-widest">Access Controls</h3>

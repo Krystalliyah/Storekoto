@@ -11,12 +11,13 @@ Route::domain(config('app.domain'))->group(function () {
         if (auth()->check()) {
             return redirect()->route('dashboard');
         }
+
         return Inertia::render('Welcome', [
             'canRegister' => Features::enabled(Features::registration()),
         ]);
     })->name('home');
 
-    Route::middleware(['auth', 'verified'])->get('/dashboard', function () {
+    Route::middleware(['auth'])->get('/dashboard', function () {
         $user = auth()->user();
         $justLoggedIn = request()->session()->get('just_logged_in', false);
 
@@ -39,7 +40,7 @@ Route::domain(config('app.domain'))->group(function () {
     require __DIR__.'/settings.php';
     require __DIR__.'/admin.php';
     require __DIR__.'/customer.php';
-    
+
     // Vendor routes (can be on central or tenant domain)
     require __DIR__.'/vendor.php';
 });

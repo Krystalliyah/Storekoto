@@ -1,0 +1,494 @@
+/* DARK MODE THEME ENHANCEMENTS */
+
+/* ========================================
+   SIDEBAR & HEADER - DARK MODE
+   ======================================== */
+
+/* Dark mode sidebar - change from green to dark grey */
+.dark .sidebar,
+.dark aside[class*="sidebar"] {
+    background-color: #111827 !important;
+    border-right: 1px solid #1f2937 !important;
+}
+
+/* Dark mode header - change to dark grey */
+.dark header,
+.dark .app-header,
+.dark header[class*="header"] {
+    background-color: #1f2937 !important;
+    border-bottom: 1px solid #374151 !important;
+}
+
+/* Sidebar logo in dark mode */
+.dark .sidebar-logo,
+.dark [class*="sidebar-logo"] {
+    background-color: #d4b76a !important; /* Gold accent */
+    color: #111827 !important;
+}
+
+/* Sidebar text in dark mode */
+.dark .sidebar *,
+.dark aside[class*="sidebar"] * {
+    color: #e5e7eb !important;
+}
+
+/* Sidebar active/hover states in dark mode */
+.dark .sidebar .active,
+.dark .sidebar [class*="active"] {
+    background-color: rgba(212, 183, 106, 0.15) !important;
+    color: #d4b76a !important;
+}
+
+.dark .sidebar a:hover,
+.dark .sidebar button:hover {
+    background-color: rgba(212, 183, 106, 0.1) !important;
+    color: #d4b76a !important;
+}
+
+/* Header elements in dark mode */
+.dark header *:not(svg),
+.dark .app-header *:not(svg) {
+    color: #e5e7eb !important;
+}
+
+.dark header svg,
+.dark .app-header svg {
+    color: #d4b76a !important;
+    stroke: #d4b76a !important;
+}
+/* ========================================
+   CONTENT AREA - DARK MODE
+   ======================================== */
+
+/* Main content background */
+.dark .dashboard-content,
+.dark main[class*="dashboard"] {
+    background-color: #0f172a !important;
+}
+
+/* AGGRESSIVE: Target ALL white backgrounds */
+.dark .bg-white,
+.dark [class*="bg-white"],
+.dark [style*="background: white"],
+.dark [style*="background:white"],
+.dark [style*="background: #fff"],
+.dark [style*="background:#fff"] {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+}
+
+/* Card components specifically */
+.dark .bg-gradient-to-br {
+    background: #1e293b !important;
+}
+
+/* Override any gradient backgrounds */
+.dark [class*="from-white"],
+.dark [class*="to-white"] {
+    background: #1e293b !important;
+}
+
+/* Stat cards and metric cards */
+.dark .shadow-sm,
+.dark .shadow,
+.dark .shadow-md,
+.dark [class*="shadow-"] {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+}
+
+/* ========================================
+   FORM ELEMENTS - DARK MODE
+   ======================================== */
+
+/* Inputs and textareas */
+.dark input,
+.dark textarea,
+.dark select {
+    background-color: #0f172a !important;
+    color: #f1f5f9 !important;
+    border-color: #374151 !important;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+    border-color: #d4b76a !important;
+    box-shadow: 0 0 0 3px rgba(212, 183, 106, 0.1) !important;
+}
+
+/* Input prefixes/suffixes */
+.dark input + span,
+.dark span + input {
+    background-color: #374151 !important;
+    color: #9ca3af !important;
+    border-color: #374151 !important;
+}
+
+/* Operating hours grid items - specific fix */
+.dark .grid.gap-3 > div,
+.dark .grid.gap-4 > div {
+    background-color: #1e293b !important;
+    border-color: #374151 !important;
+}
+
+/* Operating hours text */
+.dark .grid.gap-3 p,
+.dark .grid.gap-4 p,
+.dark .grid.gap-3 label,
+.dark .grid.gap-4 label {
+    color: #f1f5f9 !important;
+}
+
+/* Time inputs specific */
+.dark input[type="time"] {
+    background-color: #0f172a !important;
+    color: #f1f5f9 !important;
+    border-color: #374151 !important;
+}
+
+/* Checkbox containers */
+.dark .flex.items-start.gap-3,
+.dark .flex.items-center.gap-2 {
+    color: #f1f5f9 !important;
+}
+
+.dark .flex.items-start.gap-3 span,
+.dark .flex.items-center.gap-2 span {
+    color: #f1f5f9 !important;
+}
+
+/* Store preferences and notification cards */
+.dark .rounded-2xl.border,
+.dark .rounded-xl.border {
+    background-color: #1e293b !important;
+    border-color: #374151 !important;
+}
+
+.dark .rounded-2xl.border *,
+.dark .rounded-xl.border * {
+    color: #f1f5f9 !important;
+}
+
+/* Specific fix for checkbox labels */
+.dark label.flex {
+    background-color: #1e293b !important;
+}
+
+.dark label.flex .block {
+    color: #f1f5f9 !important;
+}
+
+.dark label.flex .text-sm {
+    color: #cbd5e1 !important;
+}
+/* ========================================
+   BADGES & TAGS - DARK MODE
+   ======================================== */
+
+/* ALL light color backgrounds - make them dark with gold tint */
+.dark .bg-blue-50,
+.dark .bg-green-50,
+.dark .bg-yellow-50,
+.dark .bg-amber-50,
+.dark .bg-red-50,
+.dark .bg-purple-50,
+.dark .bg-indigo-50,
+.dark .bg-emerald-50,
+.dark .bg-teal-50,
+.dark .bg-cyan-50,
+.dark [class*="bg-[#EDF6F1]"],
+.dark [class*="bg-[#F3F7F5]"],
+.dark [class*="bg-[#FBFCFC]"],
+.dark [class*="bg-[#F7FAF8]"],
+.dark [class*="bg-[#EAF4EF]"],
+.dark [class*="bg-[#E4ECE8]"],
+.dark [class*="bg-[#ECF2EF]"],
+.dark [class*="bg-[#E6EEEA]"],
+.dark [class*="bg-[#E5EEEA]"] {
+    background-color: rgba(212, 183, 106, 0.15) !important;
+    color: #f1f5f9 !important;
+}
+
+/* Status badges - specific colors */
+.dark .bg-amber-100,
+.dark .bg-amber-50 {
+    background-color: #78350f !important;
+    color: #fef3c7 !important;
+}
+
+.dark .bg-green-100,
+.dark .bg-emerald-100 {
+    background-color: #065f46 !important;
+    color: #ffffff !important;
+}
+
+.dark .bg-red-100,
+.dark .bg-red-50 {
+    background-color: #7f1d1d !important;
+    color: #fecaca !important;
+}
+
+/* Category badges in tables */
+.dark .bg-gray-100,
+.dark .bg-slate-100,
+.dark .bg-gray-50,
+.dark .bg-slate-50 {
+    background-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+
+/* ========================================
+   TEXT COLORS - DARK MODE
+   ======================================== */
+
+/* Headings and important text */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6,
+.dark .text-sm.font-medium,
+.dark .text-lg.font-semibold,
+.dark .text-xl.font-semibold,
+.dark .font-semibold {
+    color: #f1f5f9 !important;
+}
+
+/* Body text */
+.dark p,
+.dark span:not([class*="bg-"]),
+.dark label {
+    color: #e5e7eb !important;
+}
+
+/* Muted text */
+.dark .text-xs,
+.dark [class*="text-muted"],
+.dark [class*="text-gray"] {
+    color: #9ca3af !important;
+}
+
+/* Specific text color overrides for hardcoded colors */
+.dark [class*="text-[#183D34]"],
+.dark [class*="text-[#1E4138]"],
+.dark [class*="text-[#245C4A]"],
+.dark [class*="text-[#6E817A]"],
+.dark [class*="text-[#70867D]"],
+.dark [class*="text-[#74867F]"],
+.dark [class*="text-[#61766F]"] {
+    color: #f1f5f9 !important;
+}
+
+/* Ensure all text in cards is visible */
+.dark .rounded-2xl *:not(input):not(textarea):not(button),
+.dark .rounded-xl *:not(input):not(textarea):not(button) {
+    color: #e5e7eb !important;
+}
+
+/* Override for specific font weights */
+.dark .font-semibold,
+.dark .font-bold {
+    color: #f1f5f9 !important;
+}
+/* ========================================
+   BORDERS - DARK MODE
+   ======================================== */
+
+.dark .border,
+.dark [class*="border-"] {
+    border-color: #374151 !important;
+}
+
+/* ========================================
+   BUTTONS - DARK MODE
+   ======================================== */
+
+/* Primary buttons (green) - change to gold in dark mode */
+.dark button[style*="#245c4a"],
+.dark button[style*="#245C4A"],
+.dark [class*="bg-[#245C4A]"] {
+    background-color: #d4b76a !important;
+    color: #111827 !important;
+}
+
+.dark button[style*="#245c4a"]:hover,
+.dark button[style*="#245C4A"]:hover {
+    background-color: #c5a059 !important;
+}
+
+/* Secondary buttons */
+.dark button:not([style*="background"]) {
+    background-color: #374151 !important;
+    color: #f9fafb !important;
+    border-color: #4b5563 !important;
+}
+
+.dark button:not([style*="background"]):hover {
+    background-color: #4b5563 !important;
+}
+
+/* ========================================
+   TABLES - DARK MODE
+   ======================================== */
+
+.dark table {
+    background-color: #1e293b !important;
+}
+
+.dark th {
+    background-color: #334155 !important;
+    color: #f1f5f9 !important;
+    border-color: #475569 !important;
+}
+
+.dark td {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #475569 !important;
+}
+
+.dark tr:hover td {
+    background-color: #334155 !important;
+}
+
+/* ========================================
+   PROFILE PAGE - DARK MODE
+   ======================================== */
+
+/* Profile card - the main white card */
+.dark .rounded-xl.bg-white.shadow-sm,
+.dark .rounded-2xl.bg-white.shadow-sm,
+.dark .rounded-lg.bg-white.shadow-sm {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+}
+
+/* Avatar placeholder */
+.dark .rounded-full.bg-gray-100,
+.dark .rounded-full.bg-gray-200 {
+    background-color: #334155 !important;
+}
+
+/* Verified badge */
+.dark .bg-green-100,
+.dark .bg-emerald-100 {
+    background-color: #065f46 !important;
+    color: #ffffff !important;
+}
+
+/* ========================================
+   INVENTORY PAGE - DARK MODE
+   ======================================== */
+
+/* Inventory stat cards - target the actual cards */
+.dark .grid.gap-4 > div.bg-white,
+.dark .grid.gap-3 > div.bg-white {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+}
+
+/* ========================================
+   EXPENSES & ANALYTICS - DARK MODE
+   ======================================== */
+
+/* Stat cards - target cards with padding */
+.dark .rounded-\[26px\].bg-white,
+.dark .rounded-xl.bg-white.p-5,
+.dark .rounded-xl.bg-white.p-6 {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+}
+
+/* Icon backgrounds - make them gold in dark mode */
+.dark .bg-blue-50,
+.dark .bg-green-50,
+.dark .bg-yellow-50,
+.dark .bg-amber-50,
+.dark .bg-red-50,
+.dark .bg-purple-50,
+.dark .bg-indigo-50,
+.dark .bg-emerald-50 {
+    background-color: rgba(212, 183, 106, 0.15) !important;
+}
+
+/* Keep icon colors as they are - don't change them */
+.dark .text-blue-600,
+.dark .text-blue-700 {
+    color: #60a5fa !important;
+}
+
+.dark .text-green-600,
+.dark .text-green-700 {
+    color: #4ade80 !important;
+}
+
+.dark .text-yellow-600,
+.dark .text-yellow-700,
+.dark .text-amber-600 {
+    color: #fbbf24 !important;
+}
+
+.dark .text-red-600,
+.dark .text-red-700 {
+    color: #f87171 !important;
+}
+
+/* ========================================
+   ORDER MANAGEMENT - DARK MODE
+   ======================================== */
+
+/* Order cards */
+.dark .border.rounded-xl.bg-white,
+.dark .border.rounded-lg.bg-white {
+    background-color: #1e293b !important;
+    border-color: #374151 !important;
+}
+
+/* Status badges */
+.dark .bg-amber-100 {
+    background-color: #78350f !important;
+    color: #fef3c7 !important;
+}
+
+.dark .bg-green-100 {
+    background-color: #065f46 !important;
+    color: #ffffff !important;
+}
+
+.dark .bg-red-100 {
+    background-color: #7f1d1d !important;
+    color: #fecaca !important;
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* Ensure border-radius is respected */
+.rounded-xl,
+.rounded-2xl,
+.rounded-3xl,
+.rounded-full {
+    overflow: hidden !important;
+}
+
+/* Scrollbar styling for dark mode */
+.dark ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}

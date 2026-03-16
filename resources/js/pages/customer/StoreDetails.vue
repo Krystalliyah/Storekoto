@@ -337,7 +337,7 @@ const removeSelected = () => {
                         <!-- Top Badge -->
                         <span
                         v-if="!product.is_available"
-                        class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md"
+                        class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-xl"
                         >
                         Sold Out
                         </span>
@@ -508,7 +508,7 @@ const removeSelected = () => {
                         <div class="flex items-center gap-2 text-sm">
 
                             <button
-                            class="h-7 w-7 border rounded-md flex items-center justify-center hover:bg-muted transition"
+                            class="h-7 w-7 border rounded-xl flex items-center justify-center hover:bg-muted transition"
                             @click="item.quantity > 1 && item.quantity--"
                             >
                             -
@@ -519,7 +519,7 @@ const removeSelected = () => {
                             </span>
 
                             <button
-                            class="h-7 w-7 border rounded-md flex items-center justify-center hover:bg-muted transition"
+                            class="h-7 w-7 border rounded-xl flex items-center justify-center hover:bg-muted transition"
                             @click="item.quantity++"
                             >
                             +

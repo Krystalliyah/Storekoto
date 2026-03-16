@@ -30,6 +30,18 @@ export function updateTheme(value: Appearance): void {
     }
 }
 
+function isAuthLightOnlyPath(pathname: string): boolean {
+    return (
+        pathname === '/login' ||
+        pathname === '/register' ||
+        pathname === '/forgot-password' ||
+        pathname === '/two-factor-challenge' ||
+        pathname === '/user/confirm-password' ||
+        pathname.startsWith('/reset-password') ||
+        pathname.startsWith('/email/verify')
+    );
+}
+
 const setCookie = (name: string, value: string, days = 365) => {
     if (typeof document === 'undefined') {
         return;
@@ -67,8 +79,22 @@ const prefersDark = (): boolean => {
 const handleSystemThemeChange = () => {
     const currentAppearance = getStoredAppearance();
 
-    updateTheme(currentAppearance || 'system');
+    applyThemeForCurrentRoute(currentAppearance);
 };
+
+export function applyThemeForCurrentRoute(preferredAppearance?: Appearance | null): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    if (isAuthLightOnlyPath(window.location.pathname)) {
+        document.documentElement.classList.remove('dark');
+
+        return;
+    }
+
+    updateTheme(preferredAppearance ?? getStoredAppearance() ?? 'system');
+}
 
 export function initializeTheme(): void {
     if (typeof window === 'undefined') {
@@ -77,7 +103,7 @@ export function initializeTheme(): void {
 
     // Initialize theme from saved preference or default to system...
     const savedAppearance = getStoredAppearance();
-    updateTheme(savedAppearance || 'system');
+    applyThemeForCurrentRoute(savedAppearance);
 
     // Set up system theme change listener...
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);

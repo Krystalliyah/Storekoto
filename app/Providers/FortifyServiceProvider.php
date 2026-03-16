@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -22,14 +24,15 @@ class FortifyServiceProvider extends ServiceProvider
     {
         // Override login redirect based on user role and tenancy
         $this->app->singleton(\Laravel\Fortify\Contracts\LoginResponse::class, function () {
-            return new class implements \Laravel\Fortify\Contracts\LoginResponse {
+            return new class implements \Laravel\Fortify\Contracts\LoginResponse
+            {
                 public function toResponse($request)
                 {
                     $user = $request->user();
-                    
+
                     // Set flag in session to indicate user just logged in
                     $request->session()->flash('just_logged_in', true);
-                    
+
                     // If we are on a tenant subdomain, always redirect to vendor dashboard
                     if (function_exists('tenancy') && tenancy()->initialized) {
                         return $request->wantsJson()
@@ -40,34 +43,35 @@ class FortifyServiceProvider extends ServiceProvider
                     // Vendor redirects to their tenant subdomain if logging in from central
                     if ($user->hasRole('vendor')) {
                         $tenant = \App\Models\Tenant::where('user_id', $user->id)->first();
-                        
+
                         if ($tenant && $tenant->is_approved) {
                             $domain = $tenant->domains()->first();
                             if ($domain) {
-                                $url = $request->getScheme() . '://' . $domain->domain . '/vendor/dashboard';
+                                $url = $request->getScheme().'://'.$domain->domain.'/vendor/dashboard';
+
                                 return response('', 409)->header('X-Inertia-Location', $url);
                             }
                         }
-                        
+
                         return $request->wantsJson()
                             ? response()->json(['two_factor' => false])
                             : redirect()->intended('/vendor/dashboard');
                     }
-                    
+
                     // Admin stays on central domain
                     if ($user->hasRole('admin')) {
                         return $request->wantsJson()
                             ? response()->json(['two_factor' => false])
                             : redirect()->intended('/admin/dashboard');
                     }
-                    
+
                     // Customer stays on central domain
                     if ($user->hasRole('customer')) {
                         return $request->wantsJson()
                             ? response()->json(['two_factor' => false])
                             : redirect()->intended('/customer/dashboard');
                     }
-                    
+
                     return $request->wantsJson()
                         ? response()->json(['two_factor' => false])
                         : redirect()->intended('/dashboard');
@@ -84,6 +88,7 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->configureEmailVerificationUrls();
 
         // Standardize on 'email' as the request parameter name to satisfy Fortify validation.
         // We will handle the actual lookup (login_id vs email) in authenticateUsing.
@@ -101,7 +106,7 @@ class FortifyServiceProvider extends ServiceProvider
         // Custom authentication logic
         Fortify::authenticateUsing(function (Request $request) {
             $username = $request->input('email'); // This will contain login_id on tenant, email on central
-            
+
             if (function_exists('tenancy') && tenancy()->initialized) {
                 $user = \App\Models\User::where('login_id', $username)
                     ->orWhere('email', $username)
@@ -160,6 +165,7 @@ class FortifyServiceProvider extends ServiceProvider
             if ($request->user()) {
                 return redirect()->route('dashboard');
             }
+
             return Inertia::render('auth/Register');
         });
 
@@ -181,6 +187,23 @@ class FortifyServiceProvider extends ServiceProvider
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 
             return Limit::perMinute(5)->by($throttleKey);
+        });
+    }
+
+    private function configureEmailVerificationUrls(): void
+    {
+        VerifyEmail::createUrlUsing(function ($notifiable): string {
+            $relativeSignedUrl = URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addMinutes(config('auth.verification.expire', 60)),
+                [
+                    'id' => $notifiable->getKey(),
+                    'hash' => sha1($notifiable->getEmailForVerification()),
+                ],
+                absolute: false
+            );
+
+            return rtrim(config('app.url'), '/').$relativeSignedUrl;
         });
     }
 }

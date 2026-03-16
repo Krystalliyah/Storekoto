@@ -214,7 +214,7 @@ const filteredProducts = computed(() => {
                     <!-- Top Badge -->
                     <span
                     v-if="!product.is_available"
-                    class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md"
+                    class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-xl"
                     >
                     Sold Out
                     </span>

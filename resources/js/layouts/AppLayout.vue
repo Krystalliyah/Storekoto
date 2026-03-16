@@ -5,6 +5,7 @@ import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import AdminNav from '@/components/navigation/AdminNav.vue';
 import AdminNavIcons from '@/components/navigation/AdminNavIcons.vue';
+import CustomerNav from '@/components/navigation/CustomerNav.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
 import { useSidebar } from '@/composables/useSidebar';
 import type { BreadcrumbItem } from '@/types';
@@ -45,7 +46,7 @@ const userRole = computed(() => {
                 <VendorNav />
             </template>
             <template v-else>
-                <!-- Customer Nav Could Go Here -->
+                <CustomerNav />
             </template>
             
             <template #icons>

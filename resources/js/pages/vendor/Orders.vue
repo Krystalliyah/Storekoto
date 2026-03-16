@@ -73,6 +73,23 @@ const statusCountMap = computed(() => {
     return m;
 });
 
+function statusBadgeClass(status: OrderStatus): string {
+    switch (status) {
+        case 'pending':
+            return 'bg-amber-50 text-amber-700 dark:bg-amber-100/15 dark:text-amber-200';
+        case 'confirmed':
+            return 'bg-blue-50 text-blue-700 dark:bg-amber-100/15 dark:text-amber-200';
+        case 'preparing':
+            return 'bg-violet-50 text-violet-700 dark:bg-amber-100/15 dark:text-amber-200';
+        case 'ready':
+            return 'bg-emerald-50 text-emerald-700 dark:bg-amber-100/15 dark:text-amber-200';
+        case 'completed':
+            return 'bg-emerald-50 text-emerald-700 dark:bg-amber-100/15 dark:text-amber-200';
+        case 'cancelled':
+            return 'bg-red-50 text-red-700 dark:bg-amber-100/15 dark:text-amber-200';
+    }
+}
+
 function advanceStatus(order: Order) { const next = STATUS_CONFIG[order.status].next; if (next) order.status = next; }
 function cancelOrder(order: Order)   { order.status = 'cancelled'; confirmCancel.value = null; }
 function formatPrice(v: number)  { return '₱' + v.toLocaleString('en-PH', { minimumFractionDigits:2 }); }
@@ -105,20 +122,20 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 
                 <!-- Stat Cards -->
                 <div class="stat-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon stat-icon--amber"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                    <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="stat-icon bg-amber-50 text-amber-600 dark:bg-amber-100/15 dark:text-amber-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
                         <div><p class="stat-label">Awaiting Action</p><p class="stat-value">{{ stats.pending }}</p></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon stat-icon--blue"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+                    <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="stat-icon bg-blue-50 text-blue-600 dark:bg-amber-100/15 dark:text-amber-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
                         <div><p class="stat-label">In Progress</p><p class="stat-value">{{ stats.active }}</p></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon stat-icon--emerald"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="stat-icon bg-emerald-50 text-emerald-600 dark:bg-amber-100/15 dark:text-amber-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
                         <div><p class="stat-label">Completed Today</p><p class="stat-value">{{ stats.completed }}</p></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon stat-icon--gold"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                    <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="stat-icon bg-amber-50 text-amber-600 dark:bg-amber-100/15 dark:text-amber-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
                         <div><p class="stat-label">Revenue Collected</p><p class="stat-value">{{ formatPrice(stats.revenue) }}</p></div>
                     </div>
                 </div>
@@ -150,7 +167,7 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                 </div>
 
                 <!-- Desktop Table -->
-                <div class="table-card desktop-only">
+                <div class="table-card desktop-only bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
                     <table class="ord-table">
                         <thead>
                             <tr>
@@ -179,14 +196,40 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                                 </td>
                                 <td>
                                     <div class="items-preview">
-                                        <span v-for="item in order.items.slice(0,2)" :key="item.product_name" class="item-chip">{{ item.quantity }}× {{ item.product_name }}</span>
-                                        <span v-if="order.items.length > 2" class="item-chip item-chip--more">+{{ order.items.length - 2 }} more</span>
+                                        <span
+                                            v-for="item in order.items.slice(0,2)"
+                                            :key="item.product_name"
+                                            class="item-chip bg-gray-100 text-gray-700 dark:bg-slate-900 dark:text-slate-200"
+                                        >
+                                            {{ item.quantity }}× {{ item.product_name }}
+                                        </span>
+                                        <span
+                                            v-if="order.items.length > 2"
+                                            class="item-chip item-chip--more bg-[#f0f9f6] text-[#245c4a] dark:bg-amber-100/15 dark:text-amber-200"
+                                        >
+                                            +{{ order.items.length - 2 }} more
+                                        </span>
                                     </div>
                                 </td>
                                 <td><div class="pickup-cell"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{{ formatPickup(order.pickup_date) }}</div></td>
                                 <td class="total-cell">{{ formatPrice(order.total_amount) }}</td>
-                                <td><span class="payment-badge" :class="order.is_paid?'payment-badge--paid':'payment-badge--unpaid'">{{ order.is_paid ? 'Paid' : 'Unpaid' }}</span></td>
-                                <td><span class="status-badge" :style="{color:STATUS_CONFIG[order.status].color,background:STATUS_CONFIG[order.status].bg}">{{ STATUS_CONFIG[order.status].label }}</span></td>
+                                <td>
+                                    <span
+                                        class="payment-badge"
+                                        :class="[
+                                            order.is_paid
+                                                ? 'payment-badge--paid dark:bg-emerald-500/15 dark:text-emerald-300'
+                                                : 'payment-badge--unpaid dark:bg-red-500/15 dark:text-red-300',
+                                        ]"
+                                    >
+                                        {{ order.is_paid ? 'Paid' : 'Unpaid' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge" :class="statusBadgeClass(order.status)">
+                                        {{ STATUS_CONFIG[order.status].label }}
+                                    </span>
+                                </td>
                                 <td>
                                     <div class="action-row">
                                         <button class="action-btn" title="View Details" @click="detailOrder = order"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
@@ -206,7 +249,7 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                         <p>No orders match your filters</p>
                     </div>
 
-                    <div v-for="order in filtered" :key="order.id" class="oc">
+                    <div v-for="order in filtered" :key="order.id" class="oc bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
                         <!-- Order card header -->
                         <div class="oc-head">
                             <div>
@@ -214,8 +257,19 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                                 <p class="order-time">{{ formatDate(order.created_at) }}</p>
                             </div>
                             <div class="oc-badges">
-                                <span class="status-badge" :style="{color:STATUS_CONFIG[order.status].color,background:STATUS_CONFIG[order.status].bg}">{{ STATUS_CONFIG[order.status].label }}</span>
-                                <span class="payment-badge" :class="order.is_paid?'payment-badge--paid':'payment-badge--unpaid'">{{ order.is_paid ? 'Paid' : 'Unpaid' }}</span>
+                                <span class="status-badge" :class="statusBadgeClass(order.status)">
+                                    {{ STATUS_CONFIG[order.status].label }}
+                                </span>
+                                <span
+                                    class="payment-badge"
+                                    :class="[
+                                        order.is_paid
+                                            ? 'payment-badge--paid dark:bg-emerald-500/15 dark:text-emerald-300'
+                                            : 'payment-badge--unpaid dark:bg-red-500/15 dark:text-red-300',
+                                    ]"
+                                >
+                                    {{ order.is_paid ? 'Paid' : 'Unpaid' }}
+                                </span>
                             </div>
                         </div>
 
@@ -397,12 +451,8 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 
 /* ─── Stat Grid ─── */
 .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
-.stat-card { background:#fff; border:1px solid #EDEDED; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:14px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+.stat-card { border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:14px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
 .stat-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.stat-icon--amber   { background:#fffbeb; color:#d97706; }
-.stat-icon--blue    { background:#eff6ff; color:#3b82f6; }
-.stat-icon--emerald { background:#ecfdf5; color:#059669; }
-.stat-icon--gold    { background:#fdf8ec; color:#c5a059; }
 .stat-label { font-size:0.75rem; color:#737373; margin:0 0 2px; font-weight:500; }
 .stat-value { font-size:1.3rem; font-weight:700; color:#171717; margin:0; }
 
@@ -421,6 +471,14 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 .tab-btn--active { background:#fff; color:#245c4a; box-shadow:0 1px 3px rgba(0,0,0,.1); font-weight:600; }
 .tab-count { background:#EDEDED; color:#737373; padding:1px 7px; border-radius:20px; font-size:0.7rem; font-weight:600; }
 .tab-btn--active .tab-count { background:#f0f9f6; color:#245c4a; }
+
+/* Dark mode overrides */
+.dark .ord-page .tab-strip { background:#020617; }
+.dark .ord-page .tab-btn { color:#9ca3af; }
+.dark .ord-page .tab-btn:hover { background:#0f172a; color:#e5e7eb; }
+.dark .ord-page .tab-btn--active { background:#1f2937; color:#f9fafb; box-shadow:0 1px 3px rgba(15,23,42,.6); }
+.dark .ord-page .tab-count { background:#111827; color:#9ca3af; }
+.dark .ord-page .tab-btn--active .tab-count { background:rgba(212,183,106,0.15); color:#facc15; }
 
 /* ─── Filters ─── */
 .filter-bar  { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
@@ -451,7 +509,7 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 /* Container query context */
 .ord-page { container-type: inline-size; container-name: ord; }
 
-.table-card { background:#fff; border:1px solid #EDEDED; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+.table-card { border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); }
 .ord-table  { width:100%; border-collapse:collapse; }
 .ord-table thead tr { background:#f8f8f8; border-bottom:1px solid #EDEDED; }
 .ord-table th { padding:12px 14px; font-size:0.78rem; font-weight:600; color:#737373; text-align:left; white-space:nowrap; }
@@ -470,7 +528,7 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 .customer-phone { font-size:0.75rem; color:#a3a3a3; margin:0; }
 
 .items-preview { display:flex; flex-direction:column; gap:3px; }
-.item-chip { font-size:0.72rem; color:#555; background:#f5f5f5; border-radius:4px; padding:2px 7px; display:inline-block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+.item-chip { font-size:0.72rem; border-radius:4px; padding:2px 7px; display:inline-block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
 .item-chip--more { background:#f0f9f6; color:#245c4a; font-weight:600; }
 
 .pickup-cell { display:flex; align-items:center; gap:5px; font-size:0.82rem; color:#555; }
@@ -498,7 +556,7 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 .empty-state-mobile { display:flex; flex-direction:column; align-items:center; gap:12px; color:#a3a3a3; padding:48px 0; text-align:center; }
 .empty-state-mobile p { margin:0; font-size:0.9rem; }
 
-.oc { background:#fff; border:1px solid #EDEDED; border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+.oc { border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
 
 .oc-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:12px; }
 .oc-badges { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }

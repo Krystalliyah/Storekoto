@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Services\ProductAggregatorService;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class CustomerPageController extends Controller
@@ -42,9 +44,12 @@ class CustomerPageController extends Controller
         return inertia('customer/Orders');
     }
 
-    public function profile()
+    public function profile(Request $request)
     {
-        return inertia('customer/Profile');
+        return inertia('customer/Profile', [
+            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'status' => $request->session()->get('status'),
+        ]);
     }
 
     public function cart()
