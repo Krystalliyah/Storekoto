@@ -7,16 +7,35 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     protected $fillable = [
+        'sku',
         'name',
         'description',
-        'price',
-        'stock',
         'category_id',
+        'price',
         'image_path',
+        'stock',
+        'is_active'
     ];
 
-    protected $casts = [
-        'price' => 'decimal:2',
-        'stock' => 'integer',
-    ];
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function suppliers()
+    {
+        return $this->belongsToMany(Supplier::class, 'product_supplier')
+            ->withPivot('cost', 'supplier_sku')
+            ->withTimestamps();
+    }
+
+    public function inventoryMovements()
+    {
+        return $this->hasMany(InventoryMovement::class);
+    }
+
+    public function increaseStock($qty)
+    {
+        $this->increment('stock', $qty);
+    }
 }
