@@ -14,6 +14,7 @@ class TenantMockDataSeeder extends Seeder
             ProductSeeder::class,
             ProductSupplierSeeder::class,
             InventorySeeder::class,
+            OrderSeeder::class,
         ]);
     }
 }
