@@ -155,6 +155,39 @@ const initials = computed(() => {
                             </CardHeader>
 
                             <CardContent>
+                                <div
+                                    v-if="mustVerifyEmail && !user.email_verified_at"
+                                    class="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3"
+                                >
+                                    <p class="text-sm text-amber-800">
+                                        Your email address is unverified.
+                                    </p>
+                                    <p class="mt-1 text-xs text-amber-700">
+                                        We sent you a verification email. If you did not receive it, resend below.
+                                    </p>
+
+                                    <Form
+                                        v-bind="send.form()"
+                                        class="mt-3 flex flex-wrap items-center gap-3"
+                                        v-slot="{ processing }"
+                                    >
+                                        <Button
+                                            :disabled="processing"
+                                            size="sm"
+                                            class="bg-[#17493D] text-white hover:bg-[#10362D]"
+                                        >
+                                            {{ status === 'verification-link-sent' ? 'Resend verification email' : 'Send verification email' }}
+                                        </Button>
+
+                                        <span
+                                            v-if="status === 'verification-link-sent'"
+                                            class="text-xs font-medium text-green-700"
+                                        >
+                                            A new verification link has been sent to your email address.
+                                        </span>
+                                    </Form>
+                                </div>
+
                                 <Form
                                     v-bind="ProfileController.update.form()"
                                     class="space-y-6"
@@ -189,29 +222,6 @@ const initials = computed(() => {
                                                 :aria-invalid="!!errors.email"
                                             />
                                             <InputError class="mt-1" :message="errors.email" />
-                                        </div>
-                                    </div>
-
-                                    <div
-                                        v-if="mustVerifyEmail && !user.email_verified_at"
-                                        class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3"
-                                    >
-                                        <p class="text-sm text-amber-800">
-                                            Your email address is unverified.
-                                            <Link
-                                                :href="send()"
-                                                as="button"
-                                                class="ml-1 font-medium underline underline-offset-4"
-                                            >
-                                                Click here to resend the verification email.
-                                            </Link>
-                                        </p>
-
-                                        <div
-                                            v-if="status === 'verification-link-sent'"
-                                            class="mt-2 text-sm font-medium text-green-600"
-                                        >
-                                            A new verification link has been sent to your email address.
                                         </div>
                                     </div>
 

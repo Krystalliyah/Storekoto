@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 
 class AdminUserSeeder extends Seeder
@@ -17,8 +18,15 @@ class AdminUserSeeder extends Seeder
                 'name' => 'Admin User',
                 'phone' => '09123456789',
                 'password' => Hash::make('Password123!'),
+                'email_verified_at' => Carbon::now(),
             ]
         );
+
+        if ($admin->email_verified_at === null) {
+            $admin->forceFill([
+                'email_verified_at' => Carbon::now(),
+            ])->save();
+        }
 
         // Try to assign admin role if roles table exists
         try {

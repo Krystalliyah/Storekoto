@@ -73,6 +73,23 @@ const statusCountMap = computed(() => {
     return m;
 });
 
+function statusBadgeClass(status: OrderStatus): string {
+    switch (status) {
+        case 'pending':
+            return 'bg-amber-50 text-amber-700 dark:bg-amber-100/15 dark:text-amber-200';
+        case 'confirmed':
+            return 'bg-blue-50 text-blue-700 dark:bg-amber-100/15 dark:text-amber-200';
+        case 'preparing':
+            return 'bg-violet-50 text-violet-700 dark:bg-amber-100/15 dark:text-amber-200';
+        case 'ready':
+            return 'bg-emerald-50 text-emerald-700 dark:bg-amber-100/15 dark:text-amber-200';
+        case 'completed':
+            return 'bg-emerald-50 text-emerald-700 dark:bg-amber-100/15 dark:text-amber-200';
+        case 'cancelled':
+            return 'bg-red-50 text-red-700 dark:bg-amber-100/15 dark:text-amber-200';
+    }
+}
+
 function advanceStatus(order: Order) { const next = STATUS_CONFIG[order.status].next; if (next) order.status = next; }
 function cancelOrder(order: Order)   { order.status = 'cancelled'; confirmCancel.value = null; }
 function formatPrice(v: number)  { return '₱' + v.toLocaleString('en-PH', { minimumFractionDigits:2 }); }
@@ -105,20 +122,20 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 
                 <!-- Stat Cards -->
                 <div class="stat-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon stat-icon--amber"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                    <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="stat-icon bg-amber-50 text-amber-600 dark:bg-amber-100/15 dark:text-amber-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
                         <div><p class="stat-label">Awaiting Action</p><p class="stat-value">{{ stats.pending }}</p></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon stat-icon--blue"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+                    <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="stat-icon bg-blue-50 text-blue-600 dark:bg-amber-100/15 dark:text-amber-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
                         <div><p class="stat-label">In Progress</p><p class="stat-value">{{ stats.active }}</p></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon stat-icon--emerald"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                    <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="stat-icon bg-emerald-50 text-emerald-600 dark:bg-amber-100/15 dark:text-amber-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
                         <div><p class="stat-label">Completed Today</p><p class="stat-value">{{ stats.completed }}</p></div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon stat-icon--gold"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                    <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="stat-icon bg-amber-50 text-amber-600 dark:bg-amber-100/15 dark:text-amber-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
                         <div><p class="stat-label">Revenue Collected</p><p class="stat-value">{{ formatPrice(stats.revenue) }}</p></div>
                     </div>
                 </div>
@@ -150,7 +167,7 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                 </div>
 
                 <!-- Desktop Table -->
-                <div class="table-card desktop-only">
+                <div class="table-card desktop-only bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
                     <table class="ord-table">
                         <thead>
                             <tr>
@@ -179,14 +196,40 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                                 </td>
                                 <td>
                                     <div class="items-preview">
-                                        <span v-for="item in order.items.slice(0,2)" :key="item.product_name" class="item-chip">{{ item.quantity }}× {{ item.product_name }}</span>
-                                        <span v-if="order.items.length > 2" class="item-chip item-chip--more">+{{ order.items.length - 2 }} more</span>
+                                        <span
+                                            v-for="item in order.items.slice(0,2)"
+                                            :key="item.product_name"
+                                            class="item-chip bg-gray-100 text-gray-700 dark:bg-slate-900 dark:text-slate-200"
+                                        >
+                                            {{ item.quantity }}× {{ item.product_name }}
+                                        </span>
+                                        <span
+                                            v-if="order.items.length > 2"
+                                            class="item-chip item-chip--more bg-[#f0f9f6] text-[#245c4a] dark:bg-amber-100/15 dark:text-amber-200"
+                                        >
+                                            +{{ order.items.length - 2 }} more
+                                        </span>
                                     </div>
                                 </td>
                                 <td><div class="pickup-cell"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{{ formatPickup(order.pickup_date) }}</div></td>
                                 <td class="total-cell">{{ formatPrice(order.total_amount) }}</td>
-                                <td><span class="payment-badge" :class="order.is_paid?'payment-badge--paid':'payment-badge--unpaid'">{{ order.is_paid ? 'Paid' : 'Unpaid' }}</span></td>
-                                <td><span class="status-badge" :style="{color:STATUS_CONFIG[order.status].color,background:STATUS_CONFIG[order.status].bg}">{{ STATUS_CONFIG[order.status].label }}</span></td>
+                                <td>
+                                    <span
+                                        class="payment-badge"
+                                        :class="[
+                                            order.is_paid
+                                                ? 'payment-badge--paid dark:bg-emerald-500/15 dark:text-emerald-300'
+                                                : 'payment-badge--unpaid dark:bg-red-500/15 dark:text-red-300',
+                                        ]"
+                                    >
+                                        {{ order.is_paid ? 'Paid' : 'Unpaid' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge" :class="statusBadgeClass(order.status)">
+                                        {{ STATUS_CONFIG[order.status].label }}
+                                    </span>
+                                </td>
                                 <td>
                                     <div class="action-row">
                                         <button class="action-btn" title="View Details" @click="detailOrder = order"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
@@ -206,7 +249,7 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                         <p>No orders match your filters</p>
                     </div>
 
-                    <div v-for="order in filtered" :key="order.id" class="oc">
+                    <div v-for="order in filtered" :key="order.id" class="oc bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
                         <!-- Order card header -->
                         <div class="oc-head">
                             <div>
@@ -214,8 +257,19 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
                                 <p class="order-time">{{ formatDate(order.created_at) }}</p>
                             </div>
                             <div class="oc-badges">
-                                <span class="status-badge" :style="{color:STATUS_CONFIG[order.status].color,background:STATUS_CONFIG[order.status].bg}">{{ STATUS_CONFIG[order.status].label }}</span>
-                                <span class="payment-badge" :class="order.is_paid?'payment-badge--paid':'payment-badge--unpaid'">{{ order.is_paid ? 'Paid' : 'Unpaid' }}</span>
+                                <span class="status-badge" :class="statusBadgeClass(order.status)">
+                                    {{ STATUS_CONFIG[order.status].label }}
+                                </span>
+                                <span
+                                    class="payment-badge"
+                                    :class="[
+                                        order.is_paid
+                                            ? 'payment-badge--paid dark:bg-emerald-500/15 dark:text-emerald-300'
+                                            : 'payment-badge--unpaid dark:bg-red-500/15 dark:text-red-300',
+                                    ]"
+                                >
+                                    {{ order.is_paid ? 'Paid' : 'Unpaid' }}
+                                </span>
                             </div>
                         </div>
 
@@ -353,8 +407,9 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 <style scoped>
 /* ─── Base ─── */
 .ord-page {
-    padding: 28px 32px;
+    padding: 20px 16px;
     max-width: 1400px;
+    /* NOTE: no container-type here — it creates a BFC that kills overflow-x scroll on children */
     font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -397,30 +452,49 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 
 /* ─── Stat Grid ─── */
 .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
-.stat-card { background:#fff; border:1px solid #EDEDED; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:14px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+.stat-card { border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:14px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
 .stat-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.stat-icon--amber   { background:#fffbeb; color:#d97706; }
-.stat-icon--blue    { background:#eff6ff; color:#3b82f6; }
-.stat-icon--emerald { background:#ecfdf5; color:#059669; }
-.stat-icon--gold    { background:#fdf8ec; color:#c5a059; }
 .stat-label { font-size:0.75rem; color:#737373; margin:0 0 2px; font-weight:500; }
 .stat-value { font-size:1.3rem; font-weight:700; color:#171717; margin:0; }
 
 /* ─── Tab Strip ─── */
-.tab-strip-wrap { overflow-x:auto; margin-bottom:16px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-.tab-strip-wrap::-webkit-scrollbar { display:none; }
-.tab-strip { display:flex; gap:4px; background:#f5f5f5; border-radius:10px; padding:4px; width:max-content; min-width:100%; }
-.tab-btn {
-    display:inline-flex; align-items:center; gap:6px;
-    padding:7px 12px; border-radius:7px; border:none;
-    background:transparent; color:#737373;
-    font-size:0.8rem; font-weight:500; cursor:pointer;
-    transition:background 0.15s,color 0.15s; font-family:inherit; white-space:nowrap;
+.tab-strip-wrap {
+    /* Bleed out to page edges so the strip can scroll truly edge-to-edge */
+    overflow-x: auto;
+    margin: 0 -16px 16px;
+    padding: 0 16px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
 }
-.tab-btn:hover { background:#fff; color:#245c4a; }
-.tab-btn--active { background:#fff; color:#245c4a; box-shadow:0 1px 3px rgba(0,0,0,.1); font-weight:600; }
-.tab-count { background:#EDEDED; color:#737373; padding:1px 7px; border-radius:20px; font-size:0.7rem; font-weight:600; }
-.tab-btn--active .tab-count { background:#f0f9f6; color:#245c4a; }
+.tab-strip-wrap::-webkit-scrollbar { display: none; }
+.tab-strip {
+    display: flex;
+    gap: 4px;
+    background: #f5f5f5;
+    border-radius: 10px;
+    padding: 4px;
+    width: max-content;
+    min-width: calc(100% - 0px);
+}
+.tab-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 7px; border: none;
+    background: transparent; color: #737373;
+    font-size: 0.82rem; font-weight: 500; cursor: pointer;
+    transition: background 0.15s, color 0.15s; font-family: inherit; white-space: nowrap;
+}
+.tab-btn:hover { background: #fff; color: #245c4a; }
+.tab-btn--active { background: #fff; color: #245c4a; box-shadow: 0 1px 3px rgba(0,0,0,.1); font-weight: 600; }
+.tab-count { background: #EDEDED; color: #737373; padding: 1px 7px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+.tab-btn--active .tab-count { background: #f0f9f6; color: #245c4a; }
+
+/* Dark mode overrides */
+.dark .ord-page .tab-strip { background:#020617; }
+.dark .ord-page .tab-btn { color:#9ca3af; }
+.dark .ord-page .tab-btn:hover { background:#0f172a; color:#e5e7eb; }
+.dark .ord-page .tab-btn--active { background:#1f2937; color:#f9fafb; box-shadow:0 1px 3px rgba(15,23,42,.6); }
+.dark .ord-page .tab-count { background:#111827; color:#9ca3af; }
+.dark .ord-page .tab-btn--active .tab-count { background:rgba(212,183,106,0.15); color:#facc15; }
 
 /* ─── Filters ─── */
 .filter-bar  { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
@@ -448,10 +522,9 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 .desktop-only { display:block; }
 .mobile-only  { display:none; }
 
-/* Container query context */
-.ord-page { container-type: inline-size; container-name: ord; }
 
-.table-card { background:#fff; border:1px solid #EDEDED; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+
+.table-card { border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); }
 .ord-table  { width:100%; border-collapse:collapse; }
 .ord-table thead tr { background:#f8f8f8; border-bottom:1px solid #EDEDED; }
 .ord-table th { padding:12px 14px; font-size:0.78rem; font-weight:600; color:#737373; text-align:left; white-space:nowrap; }
@@ -470,7 +543,7 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 .customer-phone { font-size:0.75rem; color:#a3a3a3; margin:0; }
 
 .items-preview { display:flex; flex-direction:column; gap:3px; }
-.item-chip { font-size:0.72rem; color:#555; background:#f5f5f5; border-radius:4px; padding:2px 7px; display:inline-block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+.item-chip { font-size:0.72rem; border-radius:4px; padding:2px 7px; display:inline-block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
 .item-chip--more { background:#f0f9f6; color:#245c4a; font-weight:600; }
 
 .pickup-cell { display:flex; align-items:center; gap:5px; font-size:0.82rem; color:#555; }
@@ -493,51 +566,59 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 .empty-inner p { margin:0; font-size:0.9rem; }
 
 /* ─── Mobile Order Cards ─── */
-.mobile-list { display:flex; flex-direction:column; gap:12px; }
+.mobile-list { display: flex; flex-direction: column; gap: 14px; }
 
-.empty-state-mobile { display:flex; flex-direction:column; align-items:center; gap:12px; color:#a3a3a3; padding:48px 0; text-align:center; }
-.empty-state-mobile p { margin:0; font-size:0.9rem; }
+.empty-state-mobile { display: flex; flex-direction: column; align-items: center; gap: 12px; color: #a3a3a3; padding: 48px 0; text-align: center; }
+.empty-state-mobile p { margin: 0; font-size: 0.9rem; }
 
-.oc { background:#fff; border:1px solid #EDEDED; border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+/* Card shell — generous padding for Shopee-like feel */
+.oc { border-radius: 14px; padding: 16px 16px 14px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
 
-.oc-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:12px; }
-.oc-badges { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+/* Top row: order number + status badges */
+.oc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.oc-badges { display: flex; flex-direction: row; align-items: flex-start; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 
-.oc-customer { margin-bottom:12px; }
+/* Ensure status + payment badges wrap cleanly, never clip */
+.oc-badges .status-badge,
+.oc-badges .payment-badge { white-space: nowrap; }
 
-.oc-meta { display:grid; grid-template-columns:1fr 1fr; gap:10px; background:#f8f8f8; border-radius:8px; padding:10px 12px; margin-bottom:10px; }
-.oc-meta-item { display:flex; flex-direction:column; gap:2px; }
-.oc-label { font-size:0.7rem; font-weight:600; color:#a3a3a3; text-transform:uppercase; letter-spacing:0.04em; }
-.oc-value { font-size:0.82rem; font-weight:500; color:#171717; }
-.oc-value--price { font-size:0.95rem; font-weight:700; color:#245c4a; }
+.oc-customer { margin-bottom: 14px; }
 
-.oc-items { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:14px; }
-.oc-items .item-chip { max-width:none; }
+.oc-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f8f8f8; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.oc-meta-item { display: flex; flex-direction: column; gap: 3px; }
+.oc-label { font-size: 0.68rem; font-weight: 600; color: #a3a3a3; text-transform: uppercase; letter-spacing: 0.04em; }
+.oc-value { font-size: 0.82rem; font-weight: 500; color: #171717; }
+.oc-value--price { font-size: 1rem; font-weight: 700; color: #245c4a; }
 
-.oc-actions { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.oc-action-btns { display:flex; align-items:center; gap:6px; }
+.oc-items { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+.oc-items .item-chip { max-width: none; background: #f0f0f0; color: #444; }
+
+/* Action row — full-width buttons, comfortable height */
+.oc-actions { display: flex; align-items: center; gap: 8px; }
+.oc-action-btns { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-shrink: 0; }
 
 .oc-view-btn {
-    display:inline-flex; align-items:center; gap:6px;
-    background:#f5f5f5; color:#555; border:none;
-    padding:7px 14px; border-radius:8px;
-    font-size:0.8rem; font-weight:500; cursor:pointer;
-    transition:background 0.15s; font-family:inherit;
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    background: #f5f5f5; color: #555; border: none;
+    padding: 10px 14px; border-radius: 10px;
+    font-size: 0.82rem; font-weight: 500; cursor: pointer;
+    transition: background 0.15s; font-family: inherit;
 }
-.oc-view-btn:hover { background:#e8e8e8; }
+.oc-view-btn:hover { background: #e8e8e8; }
 
 .oc-advance-btn {
-    display:inline-flex; align-items:center; gap:6px;
-    background:#ecfdf5; color:#059669; border:1px solid rgba(5,150,105,0.2);
-    padding:7px 12px; border-radius:8px;
-    font-size:0.8rem; font-weight:600; cursor:pointer;
-    transition:background 0.15s; font-family:inherit; white-space:nowrap;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #ecfdf5; color: #059669; border: 1px solid rgba(5,150,105,0.2);
+    padding: 10px 14px; border-radius: 10px;
+    font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    transition: background 0.15s; font-family: inherit; white-space: nowrap;
 }
-.oc-advance-btn:hover { background:#d1fae5; }
+.oc-advance-btn:hover { background: #d1fae5; }
 
 /* ─── Modals ─── */
-.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:flex-end; justify-content:center; z-index:1000; backdrop-filter:blur(2px); }
-.modal { background:#fff; border-radius:16px 16px 0 0; padding:24px; width:100%; box-shadow:0 -8px 40px rgba(0,0,0,0.18); animation:slideUp 0.25s ease; max-height:92vh; overflow-y:auto; }
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:flex-end; justify-content:center; z-index:1000; backdrop-filter:blur(2px); padding:0 16px; }
+.modal { background:#fff; border-radius:16px 16px 0 0; padding:24px 20px; width:100%; max-width:calc(100vw - 32px); box-shadow:0 -8px 40px rgba(0,0,0,0.18); animation:slideUp 0.25s ease; max-height:92vh; overflow-y:auto; margin:0 auto; }
 @keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
 
 .modal-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; }
@@ -561,7 +642,6 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 
 /* Detail grid */
 .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
-.detail-section {}
 .section-label { font-size:0.7rem; font-weight:700; color:#a3a3a3; text-transform:uppercase; letter-spacing:0.05em; margin:0 0 6px; }
 .detail-value  { font-size:0.875rem; color:#171717; font-weight:500; margin:0; }
 .detail-note   { font-size:0.85rem; color:#555; margin:0; font-style:italic; }
@@ -585,67 +665,50 @@ function formatPickup(dt: string){ return new Date(dt).toLocaleString('en-PH', {
 .confirm-body  { font-size:0.875rem; color:#737373; margin:0 0 24px; line-height:1.5; }
 .modal--confirm .modal-footer { justify-content:center; }
 
-/* ─── Responsive ─── */
-@media (min-width: 769px) {
-    .filter-bar  { flex-direction:row; align-items:center; }
-    .search-wrap { flex:1; }
-    .filter-row  { flex-wrap:nowrap; }
-    .tab-strip   { width:auto; min-width:0; }
+/* ─── Responsive (standard media queries) ─── */
+@media (max-width: 720px) {
+    .ord-page  { padding: 16px; }
+    .ord-title { font-size: 1.2rem; }
+    .ord-sub   { font-size: 0.78rem; }
+    .btn-label { display: none; }
+    .btn-outline { padding: 9px 12px; }
 
-    .modal-backdrop  { align-items:center; }
-    .modal           { border-radius:14px; padding:28px; }
-    .modal--detail   { max-width:580px; }
-    .modal--confirm  { max-width:420px; }
+    .stat-grid { grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 16px; }
+    .stat-card { padding: 12px 14px; gap: 10px; }
+    .stat-icon { width: 36px; height: 36px; border-radius: 8px; }
+    .stat-value { font-size: 1.1rem; }
+    .stat-label { font-size: 0.7rem; }
+
+    .filter-bar  { flex-direction: column; }
+    .filter-row  { gap: 8px; }
+    .result-count { margin-left: 0; }
+
+    .desktop-only { display: none; }
+    .mobile-only  { display: block; }
 }
 
-@media (max-width: 1200px) {
-    .stat-grid { grid-template-columns:repeat(2,1fr); }
+@media (min-width: 721px) {
+    .filter-bar  { flex-direction: row; align-items: center; }
+    .search-wrap { flex: 1; }
+    .filter-row  { flex-wrap: nowrap; }
+    .tab-strip   { width: auto; min-width: 0; }
+    .desktop-only { display: block; }
+    .mobile-only  { display: none; }
+
+    .tab-strip-wrap { margin: 0; padding: 0; }
+
+    .modal-backdrop  { align-items: center; }
+    .modal           { border-radius: 14px; padding: 28px; }
+    .modal--detail   { max-width: 580px; }
+    .modal--confirm  { max-width: 420px; }
 }
 
-@media (max-width: 768px) {
-    .modal-footer { flex-direction:column-reverse; }
-    .modal-footer .btn-primary,
-    .modal-footer .btn-ghost,
-    .modal-footer .btn-danger { width:100%; justify-content:center; }
-    .modal--confirm .modal-footer { flex-direction:column-reverse; }
-    .detail-grid { grid-template-columns:1fr; }
-}
+@media (max-width: 380px) {
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .oc-meta   { grid-template-columns: 1fr; }
 
-/* Container queries — respond to the content area width, not the window */
-@container ord (max-width: 720px) {
-    .ord-page  { padding:16px; }
-    .ord-title { font-size:1.25rem; }
-    .ord-sub   { font-size:0.8rem; }
-    .btn-label { display:none; }
-    .btn-outline { padding:9px 12px; }
-
-    .stat-grid { grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
-    .stat-card { padding:12px 14px; gap:10px; }
-    .stat-icon { width:36px; height:36px; border-radius:8px; }
-    .stat-value { font-size:1.1rem; }
-    .stat-label { font-size:0.7rem; }
-
-    .tab-strip { width:auto; min-width:0; }
-
-    .filter-bar  { flex-direction:column; }
-    .filter-row  { gap:8px; }
-    .result-count { margin-left:0; }
-
-    .desktop-only { display:none; }
-    .mobile-only  { display:block; }
-}
-
-@container ord (min-width: 721px) {
-    .filter-bar  { flex-direction:row; align-items:center; }
-    .search-wrap { flex:1; }
-    .filter-row  { flex-wrap:nowrap; }
-    .tab-strip   { width:auto; min-width:0; }
-    .desktop-only { display:block; }
-    .mobile-only  { display:none; }
-}
-
-@container ord (max-width: 380px) {
-    .stat-grid { grid-template-columns:1fr 1fr; }
-    .oc-meta   { grid-template-columns:1fr; }
+    /* Even tighter tab buttons on very small phones */
+    .tab-btn   { padding: 7px 10px; font-size: 0.78rem; }
+    .tab-count { padding: 1px 5px; }
 }
 </style>

@@ -160,26 +160,26 @@ function stockBarWidth(item: InventoryItem) {
         </div>
 
         <div class="stat-grid">
-          <div class="stat-card">
-            <div class="stat-icon stat-icon--blue">
+          <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+            <div class="stat-icon bg-blue-50 text-blue-500 dark:bg-amber-100/15 dark:text-amber-200">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
             </div>
             <div><p class="stat-label">Tracked Inventory Items</p><p class="stat-value">{{ stats.total }}</p></div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon stat-icon--red">
+          <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+            <div class="stat-icon bg-red-50 text-red-500 dark:bg-amber-100/15 dark:text-amber-200">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
             <div><p class="stat-label">Out of Stock</p><p class="stat-value stat-value--red">{{ stats.outOfStock }}</p></div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon stat-icon--amber">
+          <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+            <div class="stat-icon bg-amber-50 text-amber-500 dark:bg-amber-100/15 dark:text-amber-200">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
             <div><p class="stat-label">Low Stock</p><p class="stat-value stat-value--amber">{{ stats.lowStock }}</p></div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon stat-icon--emerald">
+          <div class="stat-card bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+            <div class="stat-icon bg-emerald-50 text-emerald-500 dark:bg-amber-100/15 dark:text-amber-200">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
             <div><p class="stat-label">Inventory Value</p><p class="stat-value">{{ formatPrice(stats.totalValue) }}</p></div>
@@ -238,7 +238,13 @@ function stockBarWidth(item: InventoryItem) {
                     </div>
                   </div>
                 </td>
-                <td><span class="category-badge">{{ item.category }}</span></td>
+                <td>
+                  <span
+                    class="category-badge bg-[#f0f9f6] text-[#1B4D3E] dark:bg-amber-100/15 dark:text-amber-200 dark:border dark:border-amber-200/20"
+                  >
+                    {{ item.category }}
+                  </span>
+                </td>
                 <td>
                   <div class="stock-cell">
                     <span class="stock-number" :class="{'stock--out':stockStatus(item)==='out','stock--low':stockStatus(item)==='low','stock--ok':stockStatus(item)==='ok'}">{{ item.stock_level }}</span>
@@ -250,7 +256,16 @@ function stockBarWidth(item: InventoryItem) {
                   <p class="price-main">{{ formatPrice(item.unit_price) }}</p>
                   <p class="price-cost">Cost: {{ formatPrice(item.cost_price) }}</p>
                 </td>
-                <td><span class="margin-badge" :class="margin(item)>=30?'margin--good':'margin--low'">{{ margin(item) }}%</span></td>
+                <td>
+                  <span
+                    class="margin-badge"
+                    :class="[
+                      margin(item) >= 30 ? 'margin--good dark:bg-emerald-500/15 dark:text-emerald-300' : 'margin--low dark:bg-amber-500/15 dark:text-amber-200',
+                    ]"
+                  >
+                    {{ margin(item) }}%
+                  </span>
+                </td>
                 <td>
                   <button class="toggle-btn" :class="item.is_available?'toggle-btn--on':'toggle-btn--off'" @click="toggleAvailability(item)">
                     <span class="toggle-dot"></span>{{ item.is_available ? 'Active' : 'Hidden' }}
@@ -290,7 +305,11 @@ function stockBarWidth(item: InventoryItem) {
             </div>
 
             <div class="mc-tags">
-              <span class="category-badge">{{ item.category }}</span>
+              <span
+                class="category-badge bg-[#f0f9f6] text-[#1B4D3E] dark:bg-amber-100/15 dark:text-amber-200 dark:border dark:border-amber-200/20"
+              >
+                {{ item.category }}
+              </span>
               <span class="status-pill" :class="{'status-pill--on':item.is_available,'status-pill--off':!item.is_available}">
                 {{ item.is_available ? 'Active' : 'Hidden' }}
               </span>
@@ -399,12 +418,8 @@ function stockBarWidth(item: InventoryItem) {
 .btn-ghost:hover { border-color: #c5a059; color: #1B4D3E; }
 
 .stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 20px; }
-.stat-card { background:#fff; border:1px solid #EDEDED; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:14px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+.stat-card { border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:14px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
 .stat-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.stat-icon--blue    { background:#eff6ff; color:#3b82f6; }
-.stat-icon--red     { background:#fef2f2; color:#ef4444; }
-.stat-icon--amber   { background:#fffbeb; color:#d97706; }
-.stat-icon--emerald { background:#ecfdf5; color:#059669; }
 .stat-label { font-size:0.75rem; color:#737373; margin:0 0 2px; font-weight:500; }
 .stat-value { font-size:1.3rem; font-weight:700; color:#171717; margin:0; }
 .stat-value--red   { color:#ef4444; }
@@ -436,7 +451,7 @@ function stockBarWidth(item: InventoryItem) {
 
 .inv-page { container-type: inline-size; container-name: inv; }
 
-.table-card { background:#fff; border:1px solid #EDEDED; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+.table-card { border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); }
 .inv-table  { width:100%; border-collapse:collapse; }
 .inv-table thead tr { background:#f8f8f8; border-bottom:1px solid #EDEDED; }
 .inv-table th { padding:12px 16px; font-size:0.78rem; font-weight:600; color:#737373; text-align:left; white-space:nowrap; cursor:pointer; user-select:none; transition:color 0.15s; }
@@ -479,9 +494,13 @@ function stockBarWidth(item: InventoryItem) {
 
 .toggle-btn { display:inline-flex; align-items:center; gap:6px; padding:4px 10px 4px 6px; border-radius:20px; border:none; font-size:0.75rem; font-weight:600; cursor:pointer; transition:opacity 0.15s; font-family:inherit; }
 .toggle-btn:hover { opacity:0.8; }
-.toggle-btn--on  { background:#ecfdf5; color:#059669; }
-.toggle-btn--off { background:#f5f5f5; color:#a3a3a3; }
+.toggle-btn--on  { background:#10b981; color:white; }
+.toggle-btn--off { background:#6b7280; color:white; }
 .toggle-dot { width:10px; height:10px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+/* Dark mode overrides for toggle buttons */
+.dark .toggle-btn--on  { background:#10b981 !important; color:white !important; }
+.dark .toggle-btn--off { background:#6b7280 !important; color:white !important; }
 
 .action-row { display:flex; gap:4px; }
 .action-btn { width:30px; height:30px; border-radius:6px; border:1px solid #e5e5e5; background:#fff; color:#737373; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:border-color 0.15s,color 0.15s,background 0.15s; }
@@ -522,8 +541,8 @@ function stockBarWidth(item: InventoryItem) {
 
 .mc-footer { display:flex; align-items:center; justify-content:space-between; }
 
-.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:flex-end; justify-content:center; z-index:1000; backdrop-filter:blur(2px); }
-.modal { background:#fff; border-radius:16px 16px 0 0; padding:24px; width:100%; box-shadow:0 -8px 40px rgba(0,0,0,0.18); animation:slideUp 0.25s ease; max-height:92vh; overflow-y:auto; }
+.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.45); display:flex; align-items:flex-end; justify-content:center; z-index:1000; backdrop-filter:blur(2px); padding:0 16px; }
+.modal { background:#fff; border-radius:16px 16px 0 0; padding:24px 20px; width:100%; max-width:calc(100vw - 32px); box-shadow:0 -8px 40px rgba(0,0,0,0.18); animation:slideUp 0.25s ease; max-height:92vh; overflow-y:auto; margin:0 auto; }
 @keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
 .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
 .modal-title  { font-size:1.1rem; font-weight:700; color:#245c4a; margin:0; }
@@ -542,8 +561,8 @@ function stockBarWidth(item: InventoryItem) {
   .filter-bar  { flex-direction:row; align-items:center; }
   .search-wrap { flex:1; }
   .filter-row  { flex-wrap:nowrap; }
-  .modal-backdrop { align-items:center; }
-  .modal { border-radius:14px; max-width:480px; padding:28px; }
+  .modal-backdrop { align-items:center; padding:0; }
+  .modal { border-radius:14px; max-width:480px; padding:28px; margin:0; }
 }
 
 @media (max-width: 1200px) {

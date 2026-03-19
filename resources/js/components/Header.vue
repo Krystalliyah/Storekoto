@@ -37,7 +37,7 @@ const user = computed(() => page.props.auth?.user);
     left: 0;
     right: 0;
     height: 64px;
-    background: #ffffff !important;
+    background: #ffffff;
     border-bottom: 1px solid #e5e7eb;
     display: flex;
     align-items: center;
@@ -69,20 +69,20 @@ const user = computed(() => page.props.auth?.user);
 }
 
 .menu-toggle:hover {
-    background: #f3f4f6 !important;
+    background: #f3f4f6;
 }
 
 .menu-toggle svg {
     width: 24px;
     height: 24px;
-    color: #1B4D3E !important;
-    stroke: #1B4D3E !important;
+    color: #1B4D3E;
+    stroke: #1B4D3E;
 }
 
 .header-title {
     font-size: 1.5rem;
     font-weight: 800;
-    color: #1B4D3E !important;
+    color: #1B4D3E;
     margin: 0;
     font-family: 'Montserrat', sans-serif;
     white-space: nowrap;
@@ -105,7 +105,7 @@ const user = computed(() => page.props.auth?.user);
 .user-name {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #374151 !important;
+    color: #374151;
     white-space: nowrap;
 }
 
@@ -113,8 +113,8 @@ const user = computed(() => page.props.auth?.user);
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: #C5A059 !important;
-    color: #1B4D3E !important;
+    background: #C5A059;
+    color: #1B4D3E;
     display: flex;
     align-items: center;
     justify-content: center;
