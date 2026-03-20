@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { useSidebar } from '@/composables/useSidebar';
 
 const page = usePage();
 const currentPath = computed(() => page.url.split('?')[0]);
+const { isCollapsed, isDrawerMode } = useSidebar();
 
 const isActive = (href: string) => {
     if (href === '/admin/dashboard') return currentPath.value === href;
@@ -28,7 +30,7 @@ const isActive = (href: string) => {
                     />
                 </svg>
             </span>
-            <span class="sidebar-nav-label">Dashboard</span>
+            <span v-show="!isCollapsed || isDrawerMode" class="sidebar-nav-label">Dashboard</span>
         </Link>
 
         <Link
@@ -46,7 +48,7 @@ const isActive = (href: string) => {
                     />
                 </svg>
             </span>
-            <span class="sidebar-nav-label">Vendors</span>
+            <span v-show="!isCollapsed || isDrawerMode" class="sidebar-nav-label">Vendors</span>
         </Link>
 
         <Link
@@ -64,7 +66,7 @@ const isActive = (href: string) => {
                     />
                 </svg>
             </span>
-            <span class="sidebar-nav-label">Customers</span>
+            <span v-show="!isCollapsed || isDrawerMode" class="sidebar-nav-label">Customers</span>
         </Link>
 
         <Link
@@ -82,7 +84,7 @@ const isActive = (href: string) => {
                     />
                 </svg>
             </span>
-            <span class="sidebar-nav-label">Categories</span>
+            <span v-show="!isCollapsed || isDrawerMode" class="sidebar-nav-label">Categories</span>
         </Link>
 
         <Link
@@ -100,7 +102,7 @@ const isActive = (href: string) => {
                     />
                 </svg>
             </span>
-            <span class="sidebar-nav-label">Reports</span>
+            <span v-show="!isCollapsed || isDrawerMode" class="sidebar-nav-label">Reports</span>
         </Link>
     </div>
 </template>

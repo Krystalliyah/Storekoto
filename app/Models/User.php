@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles;
+    use HasFactory, HasRoles, MustVerifyEmailTrait, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * Use central or tenant connection depending on tenancy initialization.
@@ -37,7 +38,6 @@ class User extends Authenticatable
      * Additional tenant fields used for tenant auth
      */
     protected $guarded = [];
-
 
     /**
      * The attributes that should be hidden for serialization.
@@ -77,11 +77,8 @@ class User extends Authenticatable
             // Ignore and fall back
         }
 
-        return 'mysql';
+        return null;
     }
 
-    protected static function booted(): void
-    {
-        
-    }
+    protected static function booted(): void {}
 }

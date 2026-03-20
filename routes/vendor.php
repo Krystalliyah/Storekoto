@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\Vendor\StoreSetupController;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Vendor\DashboardController;
+
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -9,10 +12,10 @@ use Illuminate\Support\Facades\Route;
 | CENTRAL DOMAIN VENDOR ROUTES ( vendor.php )
 |--------------------------------------------------------------------------
 | This file handles routes specifically on the CENTRAL domain (e.g., itinda.test)
-| for vendor accounts BEFORE they access their tenant dashboard. 
-| 
-| IMPORTANT: Do NOT place product/order management routes here. 
-| Once a vendor store is approved, they must manage their store from their 
+| for vendor accounts BEFORE they access their tenant dashboard.
+|
+| IMPORTANT: Do NOT place product/order management routes here.
+| Once a vendor store is approved, they must manage their store from their
 | specific tenant subdomain. Those routes belong in routes/tenant.php.
 |--------------------------------------------------------------------------
 */

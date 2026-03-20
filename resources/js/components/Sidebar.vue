@@ -67,7 +67,7 @@ const handleDrawerNavClick = () => {
                         </svg>
                     </div>
 
-                    <h3 class="sidebar-title">
+                    <h3 v-show="!isCollapsed || isDrawerMode" class="sidebar-title">
                         {{
                             role === 'admin'
                                 ? 'Admin'
@@ -97,7 +97,7 @@ const handleDrawerNavClick = () => {
                 <Link
                     href="/settings/profile"
                     class="menu-item"
-                    :title="isCollapsed ? 'Settings' : ''"
+                    title="Settings"
                     @click="handleDrawerNavClick"
                 >
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,13 +114,13 @@ const handleDrawerNavClick = () => {
                             d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                         />
                     </svg>
-                    <span class="menu-text">Settings</span>
+                    <span v-show="!isCollapsed || isDrawerMode" class="menu-text">Settings</span>
                 </Link>
 
                 <button
                     @click="openLogoutModal"
                     class="menu-item logout-btn"
-                    :title="isCollapsed ? 'Logout' : ''"
+                    title="Logout"
                 >
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
@@ -130,7 +130,7 @@ const handleDrawerNavClick = () => {
                             d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                         />
                     </svg>
-                    <span class="menu-text">Logout</span>
+                    <span v-show="!isCollapsed || isDrawerMode" class="menu-text">Logout</span>
                 </button>
             </div>
         </div>
@@ -169,7 +169,9 @@ const handleDrawerNavClick = () => {
     transition:
         width 0.28s cubic-bezier(0.4, 0, 0.2, 1),
         transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-        box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+        top 0.2s ease,
+        height 0.2s ease;
 }
 
 .sidebar.collapsed {
@@ -380,6 +382,7 @@ const handleDrawerNavClick = () => {
     inset: 64px 0 0 0;
     background: rgba(15, 23, 42, 0.45);
     z-index: 29;
+    transition: inset 0.2s ease;
 }
 
 .sidebar-close-btn {
