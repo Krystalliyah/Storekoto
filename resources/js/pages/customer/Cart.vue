@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3'
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 
 import Header from '@/components/Header.vue'
 import Sidebar from '@/components/Sidebar.vue'
@@ -85,92 +85,69 @@ const shopFilter = ref<number | 'all'>('all') // simple filter by store
 const preorderOpen = ref(false)
 
 /** Mock cart data (replace later with props) */
-const cartItems = ref<CartItem[]>([
-  {
-    id: 1,
-    store: {
-      id: 11,
-      name: 'Green Basket Grocery',
-      description: 'Fresh produce and essentials delivered to your neighborhood.',
-      logo_url:
-        'https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?auto=format&fit=crop&w=128&q=60',
-    },
-    product: {
-      id: 9001,
-      name: 'Fresh Carrots (1kg)',
-      description: 'Crisp and sweet carrots, perfect for stews and salads.',
-      price: 120,
-      image_url:
-        'https://images.unsplash.com/photo-1582515073490-39981397c445?auto=format&fit=crop&w=256&q=60',
-    },
-    quantity: 2,
-    selected: true,
-    added_at: '2026-02-26T10:12:00+08:00',
-  },
-  {
-    id: 2,
-    store: {
-      id: 11,
-      name: 'Green Basket Grocery',
-      description: 'Fresh produce and essentials delivered to your neighborhood.',
-      logo_url:
-        'https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?auto=format&fit=crop&w=128&q=60',
-    },
-    product: {
-      id: 9002,
-      name: 'Organic Eggs (12pcs)',
-      description: 'Farm-fresh eggs, rich yolks and great for baking.',
-      price: 265,
-      image_url:
-        'https://images.unsplash.com/photo-1587486913049-53fc88980cfc?auto=format&fit=crop&w=256&q=60',
-    },
-    quantity: 1,
-    selected: false,
-    added_at: '2026-02-26T10:15:00+08:00',
-  },
-  {
-    id: 3,
-    store: {
-      id: 21,
-      name: 'Bake & Brew',
-      description: 'Artisan breads and coffee made fresh every morning.',
-      logo_url:
-        'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=128&q=60',
-    },
-    product: {
-      id: 9103,
-      name: 'Chocolate Muffin',
-      description: 'Moist chocolate muffin with dark chocolate chips.',
-      price: 105,
-      image_url:
-        'https://images.unsplash.com/photo-1509440159598-0249088772ff?auto=format&fit=crop&w=256&q=60',
-    },
-    quantity: 3,
-    selected: true,
-    added_at: '2026-02-26T09:40:00+08:00',
-  },
-  {
-    id: 4,
-    store: {
-      id: 21,
-      name: 'Bake & Brew',
-      description: 'Artisan breads and coffee made fresh every morning.',
-      logo_url:
-        'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=128&q=60',
-    },
-    product: {
-      id: 9104,
-      name: 'Cinnamon Roll',
-      description: 'Buttery cinnamon roll topped with cream cheese glaze.',
-      price: 105,
-      image_url:
-        'https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=256&q=60',
-    },
-    quantity: 1,
-    selected: false,
-    added_at: '2026-02-26T09:41:00+08:00',
-  },
-])
+const cartItems = ref<CartItem[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
+
+// Fetch cart from API
+const fetchCart = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await fetch('/customer/cart-data', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    
+    // Transform API response to component format
+    const items: CartItem[] = []
+    data.data.forEach((storeCart: any) => {
+      storeCart.items.forEach((item: any) => {
+        items.push({
+          id: item.id,
+          store: {
+            id: storeCart.store_id,
+            name: storeCart.store_id,
+            description: '',
+            logo_url: null
+          },
+          product: {
+            id: item.product.id,
+            name: item.product.name,
+            description: '',
+            price: parseFloat(item.product.price),
+            image_url: item.product.image_path ? `/storage/${item.product.image_path}` : null
+          },
+          quantity: item.quantity,
+          selected: false,
+          added_at: new Date().toISOString()
+        })
+      })
+    })
+    
+    cartItems.value = items
+  } catch (err) {
+    console.error('Error fetching cart:', err)
+    error.value = err instanceof Error ? err.message : 'Failed to load cart'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchCart()
+})
 
 /** Derived options */
 const stores = computed(() => {
@@ -374,7 +351,7 @@ const adjustQty = (id: number, delta: number) => {
         </div>
 
         <!-- Search / Filter / Sort -->
-        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-center md:justify-between">
           <!-- Search (same pattern as Orders) -->
           <div class="flex w-full max-w-1xl gap-3">
             <DropdownMenu>
@@ -428,8 +405,21 @@ const adjustQty = (id: number, delta: number) => {
           </div>
         </div>
 
+        <!-- Loading State -->
+        <div v-if="loading" class="text-center py-12">
+          <p class="text-muted-foreground">Loading cart...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="text-center py-12">
+          <p class="text-red-600 mb-4">{{ error }}</p>
+          <Button @click="fetchCart" variant="outline">
+            Try Again
+          </Button>
+        </div>
+
         <!-- Empty State -->
-        <Card v-if="cartItems.length === 0" class="rounded-xl shadow-sm">
+        <Card v-else-if="cartItems.length === 0" class="rounded-xl shadow-sm">
           <CardHeader>
             <CardTitle class="text-base">Your cart is empty</CardTitle>
           </CardHeader>
@@ -498,7 +488,7 @@ const adjustQty = (id: number, delta: number) => {
               <div
                 v-for="item in group.items"
                 :key="item.id"
-                class="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-center"
+                class="flex flex-col gap-2 rounded-lg border border-border p-2 sm:p-3 sm:flex-row sm:items-center sm:gap-3"
               >
                 <!-- checkbox -->
                 <div class="flex items-center gap-3">
@@ -509,7 +499,7 @@ const adjustQty = (id: number, delta: number) => {
                 </div>
 
                 <!-- image -->
-                <div class="h-14 w-14 overflow-hidden rounded-lg bg-muted border border-border shrink-0">
+                <div class="h-12 w-12 overflow-hidden rounded-lg bg-muted border border-border shrink-0 sm:h-14 sm:w-14">
                   <img
                     v-if="item.product.image_url"
                     :src="item.product.image_url"
@@ -529,7 +519,7 @@ const adjustQty = (id: number, delta: number) => {
                 </div>
 
                 <!-- qty + actions -->
-                <div class="flex items-center justify-between gap-2 sm:justify-end sm:min-w-[220px]">
+                <div class="flex items-center justify-between gap-1 sm:gap-2 sm:justify-end sm:min-w-[200px]">
                   <div class="flex items-center gap-2">
                     <Button
                       variant="outline"
@@ -598,7 +588,7 @@ const adjustQty = (id: number, delta: number) => {
         class="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
       >
         <div
-          class="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
+          class="mx-auto flex max-w-7xl flex-col gap-2 px-3 py-3 sm:gap-3 sm:px-6 sm:py-4 sm:flex-row sm:items-center sm:justify-between"
           :class="[{ 'ml-[250px]': !isCollapsed }, { 'ml-[70px]': isCollapsed }]"
         >
           <div class="flex flex-wrap items-center gap-4">

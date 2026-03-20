@@ -19,6 +19,16 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
         Route::get('/stores-data', [StoreController::class, 'index']);
         Route::get('/stores-data/{id}', [StoreController::class, 'show']);
         Route::get('/stores-data/{id}/products', [StoreController::class, 'products']);
+        
+        // Categories API Route
+        Route::get('/categories', [\App\Http\Controllers\Api\CategoryController::class, 'index']);
+        
+        // Cart API Routes
+        Route::get('/cart-data', [\App\Http\Controllers\Api\CartController::class, 'index']);
+        Route::post('/cart/add', [\App\Http\Controllers\Api\CartController::class, 'add']);
+        Route::put('/cart/{cart}', [\App\Http\Controllers\Api\CartController::class, 'update']);
+        Route::delete('/cart/{cart}', [\App\Http\Controllers\Api\CartController::class, 'destroy']);
+        Route::delete('/cart', [\App\Http\Controllers\Api\CartController::class, 'clear']);
 
         // Orders Page API Routes
         Route::get('/orders-data', [CustomerOrderController::class, 'index'])->name('orders.data');

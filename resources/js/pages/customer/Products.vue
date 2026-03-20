@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { Head, usePage, router } from '@inertiajs/vue3';
+import { ref, computed, onMounted } from 'vue';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import CustomerNav from '@/components/navigation/CustomerNav.vue';
 import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue';
-import PlaceholderPage from '@/components/PlaceholderPage.vue';
 import { useSidebar } from '@/composables/useSidebar';
 import { Link } from '@inertiajs/vue3'
 import { Button } from '@/components/ui/button'
@@ -19,54 +18,124 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
 const { isCollapsed } = useSidebar();
+const page = usePage();
 const contentClass = computed(() => ({
     'dashboard-content': true,
     'sidebar-collapsed': isCollapsed.value
 }));
 
-// Mock Products
-const products = ref([
-  {
-    id: 1,
-    product_name: 'Organic Fuji Apples (1kg Pack)',
-    description: 'Premium imported apples.',
-    category_id: 1,
-    image_url: 'https://picsum.photos/400?1',
-    unit_price: 3.99,
-    stock_level: 20,
-    sold_count: 120,
-    rating: 4.5,
-    is_available: true,
-    is_active: true,
-    store: {
-      id: 1,
-      name: 'Emerald Fresh Market',
-      logo: 'https://ui-avatars.com/api/?name=Emerald+Fresh&background=245c4a&color=fff'
+// Real Products from API
+const products = ref<any[]>([])
+const categories = ref<any[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
+
+// Fetch all categories from API
+const fetchCategories = async () => {
+  try {
+    const response = await fetch('/customer/categories', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      categories.value = data.data || []
     }
-  },
-  {
-    id: 2,
-    product_name: 'Whole Fresh Milk 1L',
-    description: 'Fresh dairy milk.',
-    category_id: 2,
-    image_url: 'https://picsum.photos/400?2',
-    unit_price: 2.49,
-    stock_level: 3,
-    sold_count: 45,
-    rating: 4.2,
-    is_available: false,
-    is_active: true,
-    store: {
-      id: 2,
-      name: 'Golden Harvest Grocery',
-      logo: 'https://ui-avatars.com/api/?name=Golden+Harvest&background=245c4a&color=fff'
+  } catch (err) {
+    console.error('Error fetching categories:', err)
+  }
+}
+
+// Fetch all products from all stores via API
+const fetchAllProducts = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await fetch('/customer/stores-data', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
     }
-  },
-])
+    
+    const storesData = await response.json()
+    const allProducts: any[] = []
+    
+    // Fetch products from each store
+    for (const store of storesData.data) {
+      try {
+        const productsResponse = await fetch(`/customer/stores-data/${store.id}/products`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json()
+          const storeProducts = productsData.data.map((product: any) => ({
+            ...product,
+            store: {
+              id: store.id,
+              name: store.name,
+              logo: store.logo
+            }
+          }))
+          allProducts.push(...storeProducts)
+        }
+      } catch (err) {
+        console.error(`Error fetching products for store ${store.id}:`, err)
+      }
+    }
+    
+    products.value = allProducts
+  } catch (err) {
+    console.error('Error fetching products:', err)
+    error.value = err instanceof Error ? err.message : 'Failed to load products'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchCategories()
+  fetchAllProducts()
+})
 
 const searchProduct = ref('')
 const selectedCategory = ref<'all' | number>('all')
 const sortBy = ref<'name' | 'price_low' | 'price_high'>('name')
+
+const addToCart = (product: any) => {
+  router.post('/customer/cart/add', {
+    store_id: product.store.id,
+    product_id: product.id,
+    quantity: 1
+  }, {
+    preserveScroll: true,
+    onSuccess: () => {
+      alert('Product added to cart!')
+    },
+    onError: (errors) => {
+      console.error('Errors:', errors)
+      alert('Failed to add to cart')
+    }
+  })
+}
 
 const filteredProducts = computed(() => {
   let result = products.value.filter(product => {
@@ -156,14 +225,12 @@ const filteredProducts = computed(() => {
                             <DropdownMenuItem @click="selectedCategory = 'all'">
                             All
                             </DropdownMenuItem>
-                            <DropdownMenuItem @click="selectedCategory = 1">
-                            Fruits
-                            </DropdownMenuItem>
-                            <DropdownMenuItem @click="selectedCategory = 2">
-                            Dairy
-                            </DropdownMenuItem>
-                            <DropdownMenuItem @click="selectedCategory = 3">
-                            Snacks
+                            <DropdownMenuItem
+                            v-for="category in categories"
+                            :key="category.id"
+                            @click="selectedCategory = category.id"
+                            >
+                            {{ category.name }}
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                         </DropdownMenu>
@@ -195,7 +262,22 @@ const filteredProducts = computed(() => {
 
                 <!-- Product Grid -->
                 <div
-                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                v-if="loading"
+                class="text-center py-12 text-muted-foreground"
+                >
+                Loading products...
+                </div>
+
+                <div
+                v-else-if="error"
+                class="text-center py-12 text-red-600"
+                >
+                {{ error }}
+                </div>
+
+                <div
+                v-else
+                class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6"
                 >
                 <Card
                 v-for="product in filteredProducts"
@@ -277,6 +359,7 @@ const filteredProducts = computed(() => {
                     size="sm"
                     :disabled="!product.is_available"
                     class="w-full mt-2 mb-4 bg-[#245c4a] hover:bg-[#1B4D3E] text-white"
+                    @click="addToCart(product)"
                     >
                     Add to Cart
                     </Button>
