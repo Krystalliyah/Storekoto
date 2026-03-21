@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 use Inertia\Inertia;
+use App\Http\Controllers\Vendor\AnalyticsController;
 
 
 /*
@@ -106,7 +107,9 @@ Route::middleware([
         });
         
         Route::get('/expenses', fn() => inertia('vendor/Expenses'))->name('expenses')->middleware('permission:view-expenses');
-        Route::get('/analytics', fn() => inertia('vendor/Analytics'))->name('analytics')->middleware('permission:view-analytics');
+        Route::get('/analytics', AnalyticsController::class)
+            ->name('analytics')
+            ->middleware('permission:view-analytics');
     });
 
     Route::middleware(['auth', 'verified', 'role:vendor|staff'])->group(function () {

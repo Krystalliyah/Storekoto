@@ -17,6 +17,45 @@ import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
 import { useSidebar } from '@/composables/useSidebar';
 
+interface WeeklySale {
+    day: string;
+    revenue: number;
+    orders: number;
+}
+
+interface CategoryMixItem {
+    label: string;
+    value: number;
+}
+
+interface PeakWindowItem {
+    label: string;
+    orders: number;
+}
+
+interface TopProductItem {
+    name: string;
+    orders: number;
+    revenue: number;
+    growth: string;
+}
+
+const props = withDefaults(defineProps<{
+    weeklySales?: WeeklySale[];
+    categoryMix?: CategoryMixItem[];
+    peakWindows?: PeakWindowItem[];
+    topProducts?: TopProductItem[];
+    recentInsights?: string[];
+    growthSignal?: string;
+}>(), {
+    weeklySales: () => [],
+    categoryMix: () => [],
+    peakWindows: () => [],
+    topProducts: () => [],
+    recentInsights: () => [],
+    growthSignal: '0%',
+});
+
 const { isCollapsed } = useSidebar();
 
 const contentClass = computed(() => ({
@@ -24,43 +63,12 @@ const contentClass = computed(() => ({
     'sidebar-collapsed': isCollapsed.value,
 }));
 
-const weeklySales = ref([
-    { day: 'Mon', revenue: 4200, orders: 32 },
-    { day: 'Tue', revenue: 5100, orders: 38 },
-    { day: 'Wed', revenue: 4800, orders: 35 },
-    { day: 'Thu', revenue: 6200, orders: 44 },
-    { day: 'Fri', revenue: 7600, orders: 56 },
-    { day: 'Sat', revenue: 6900, orders: 49 },
-    { day: 'Sun', revenue: 3100, orders: 22 },
-]);
-
-const categoryMix = ref([
-    { label: 'Meals', value: 46 },
-    { label: 'Drinks', value: 31 },
-    { label: 'Snacks', value: 15 },
-    { label: 'Essentials', value: 8 },
-]);
-
-const peakWindows = ref([
-    { label: '11:00 AM - 1:00 PM', orders: 48 },
-    { label: '2:00 PM - 4:00 PM', orders: 31 },
-    { label: '5:00 PM - 7:00 PM', orders: 24 },
-    { label: '8:00 AM - 10:00 AM', orders: 18 },
-]);
-
-const topProducts = ref([
-    { name: 'Chicken Rice Bowl', orders: 84, revenue: 7560, growth: '+12%' },
-    { name: 'Iced Matcha Latte', orders: 72, revenue: 5760, growth: '+9%' },
-    { name: 'Spicy Tuna Sandwich', orders: 58, revenue: 5220, growth: '+6%' },
-    { name: 'Chocolate Milk Tea', orders: 55, revenue: 4675, growth: '+11%' },
-    { name: 'Bottled Water Pack', orders: 39, revenue: 1950, growth: '+3%' },
-]);
-
-const recentInsights = ref([
-    'Friday remains your strongest sales day, driven by lunch and afternoon pick-up orders.',
-    'Meals continue to lead revenue, while drinks maintain strong repeat purchase volume.',
-    'Midday pick-up windows show the highest traffic, so prep capacity should stay focused before noon.',
-]);
+const weeklySales = computed(() => props.weeklySales);
+const categoryMix = computed(() => props.categoryMix);
+const peakWindows = computed(() => props.peakWindows);
+const topProducts = computed(() => props.topProducts);
+const recentInsights = computed(() => props.recentInsights);
+const growthSignal = computed(() => props.growthSignal);
 
 const totalRevenue = computed(() =>
     weeklySales.value.reduce((sum, item) => sum + item.revenue, 0),
@@ -75,17 +83,19 @@ const averageOrderValue = computed(() =>
 );
 
 const bestDay = computed(() =>
-    weeklySales.value.reduce((best, current) =>
-        current.revenue > best.revenue ? current : best,
-    ),
+    weeklySales.value.length
+        ? weeklySales.value.reduce((best, current) =>
+              current.revenue > best.revenue ? current : best,
+          )
+        : { day: '—', revenue: 0, orders: 0 },
 );
 
 const maxRevenue = computed(() =>
-    Math.max(...weeklySales.value.map((item) => item.revenue)),
+    Math.max(1, ...weeklySales.value.map((item) => item.revenue)),
 );
 
 const maxPeakOrders = computed(() =>
-    Math.max(...peakWindows.value.map((item) => item.orders)),
+    Math.max(1, ...peakWindows.value.map((item) => item.orders)),
 );
 
 const formatPeso = (value: number) =>
@@ -230,7 +240,7 @@ const formatPeso = (value: number) =>
                         <div class="flex items-start justify-between">
                             <div>
                                 <p class="text-sm font-medium text-[#73867F] dark:text-slate-300">Growth signal</p>
-                                <p class="mt-2 text-2xl font-semibold text-[#183D34] dark:text-slate-100">+14%</p>
+                                <p class="mt-2 text-2xl font-semibold text-[#183D34] dark:text-slate-100">{{ growthSignal }}</p>
                             </div>
                             <div
                                 class="rounded-2xl bg-[#EEF2FF] p-3 text-[#4253B5] dark:bg-amber-100/15 dark:text-amber-200"
@@ -239,7 +249,7 @@ const formatPeso = (value: number) =>
                             </div>
                         </div>
                         <p class="mt-3 text-sm text-[#6C817A] dark:text-slate-300">
-                            Estimated week-over-week improvement based on current order flow.
+                            Estimated week-over-week revenue change based on completed orders.
                         </p>
                     </div>
                 </section>
