@@ -492,3 +492,62 @@
 .dark ::-webkit-scrollbar-thumb:hover {
     background: #64748b;
 }
+
+/* Force product count chips to have dark background in dark mode */
+.dark .chip-products {
+    background-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+/* Ensure category chips stay dark */
+.dark .chip-children {
+    background-color: #4c1d95 !important;
+    color: #e9d5ff !important;
+}
+
+/* Category row hover in dark mode - dark green */
+.dark .tree-row:hover {
+    background-color: #014050 !important;  /* Your brand green */
+}
+
+/* Child rows hover - slightly lighter or same dark green */
+.dark .child-row:hover {
+    background-color: #113d3c !important;
+}
+
+/* ========================================
+   FIX REPORTS.VUE DARK MODE ISSUES
+   ======================================== */
+
+/* Fix "Days Active" badge in Vendor Performance */
+.dark .days-badge {
+    background-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+/* Fix "Verified" and "Pending" status pills in Customer Activity */
+.dark .pill-active {
+    background-color: #15803d !important;  /* Dark green for verified */
+    color: #ffffff !important;
+}
+
+.dark .pill-pending {
+    background-color: #92400e !important;  /* Dark orange for pending */
+    color: #ffffff !important;
+}
+
+/* Fix any other status pills that might appear */
+.dark .status-pill {
+    background-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+/* Ensure the "Verified" and "Pending" text in the table header remains visible */
+.dark .data-table th {
+    color: #9ca3af !important;
+}
+
+/* Fix the percentage text inside donut charts */
+.dark .donut-body svg text {
+    fill: #f1f5f9 !important;  /* Light text for dark mode */
+}

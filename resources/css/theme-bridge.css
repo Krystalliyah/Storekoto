@@ -2780,3 +2780,8 @@ input[type="checkbox"].text-\[#245C4A\]:checked {
 .dark .text-black {
     color: #e8f5e8 !important;
 }
+
+.dark .chip-products {
+    background-color: #334155 !important;
+    color: #f1f5f9 !important;
+}

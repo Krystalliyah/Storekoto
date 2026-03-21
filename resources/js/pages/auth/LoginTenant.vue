@@ -583,8 +583,9 @@ onMounted(() => {
 }
 
 .it-input-wrap :deep(input:focus) {
-    border-color: var(--store-primary);
-    box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.1);
+    border-color: var(--gold);
+    border-width: 2px;
+    box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.25);
 }
 
 .it-field-error { 

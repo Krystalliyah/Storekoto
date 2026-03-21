@@ -18,9 +18,6 @@ import {
     StarIcon,
 } from '@heroicons/vue/24/outline';
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                               */
-/* ------------------------------------------------------------------ */
 interface MonthPoint  { month: string; count: number }
 interface TopVendor   { id: string; name: string; domain: string | null; created_at: string; days_active: number }
 interface FunnelStep  { label: string; value: number }
@@ -53,26 +50,17 @@ interface Props {
 
 const props = defineProps<Props>()
 
-/* ------------------------------------------------------------------ */
-/*  Safe accessors                                                      */
-/* ------------------------------------------------------------------ */
 const ov  = computed(() => props.overview          ?? { totalVendors:0, activeVendors:0, pendingVendors:0, totalCustomers:0, approvalRate:0, newVendorsThisMonth:0, newCustomersThisMonth:0, healthScore:0 })
 const vp  = computed(() => props.vendorPerformance ?? { topVendors:[], monthlyRegistrations:[], approvalFunnel:[] })
 const ca  = computed(() => props.customerActivity  ?? { totalCustomers:0, monthlySignups:[], verified:0, unverified:0, verificationRate:0, recentSignups:[] })
 const cb  = computed(() => props.categoryBreakdown ?? { breakdown:[], totalUnique:0 })
 
-/* ------------------------------------------------------------------ */
-/*  Sidebar                                                             */
-/* ------------------------------------------------------------------ */
 const { isCollapsed } = useSidebar()
 const contentClass = computed(() => ({
     'dashboard-content': true,
     'sidebar-collapsed': isCollapsed.value,
 }))
 
-/* ------------------------------------------------------------------ */
-/*  Active tab                                                          */
-/* ------------------------------------------------------------------ */
 type Tab = 'overview' | 'vendors' | 'customers' | 'categories'
 const activeTab = ref<Tab>('overview')
 
@@ -83,9 +71,6 @@ const tabs: { key: Tab; label: string; icon: any }[] = [
     { key: 'categories', label: 'Categories',         icon: Squares2X2Icon },
 ]
 
-/* ------------------------------------------------------------------ */
-/*  SVG line/area chart helper                                          */
-/* ------------------------------------------------------------------ */
 const CW = 520; const CH = 140
 const PT = 12;  const PR = 12; const PB = 24; const PL = 28
 
@@ -117,9 +102,6 @@ const customerPts = computed(() => chartPoints(ca.value.monthlySignups))
 const xLabels = (pts: { x: number; month: string }[]) =>
     pts.map(p => ({ x: p.x, label: p.month.split(' ')[0] }))
 
-/* ------------------------------------------------------------------ */
-/*  Health colour                                                       */
-/* ------------------------------------------------------------------ */
 const healthColor = computed(() => {
     const s = ov.value.healthScore
     if (s >= 80) return '#10b981'
@@ -135,9 +117,6 @@ const healthLabel = computed(() => {
     return 'Needs Attention'
 })
 
-/* ------------------------------------------------------------------ */
-/*  Donut helper                                                        */
-/* ------------------------------------------------------------------ */
 const DONUT_R = 42; const CIRC = 2 * Math.PI * DONUT_R
 const approvalDash = computed(() => {
     const f = (ov.value.approvalRate / 100) * CIRC
@@ -148,14 +127,8 @@ const verifyDash = computed(() => {
     return `${f.toFixed(1)} ${(CIRC - f).toFixed(1)}`
 })
 
-/* ------------------------------------------------------------------ */
-/*  Funnel bar widths                                                   */
-/* ------------------------------------------------------------------ */
 const funnelMax = computed(() => Math.max(...vp.value.approvalFunnel.map(f => f.value), 1))
 
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                             */
-/* ------------------------------------------------------------------ */
 function initials(name: string) {
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 }
@@ -175,7 +148,7 @@ function formatDate(d: string | null) {
         <main :class="contentClass">
             <div class="page-container">
 
-                <!-- ── Page Header ── -->
+                <!-- Page Header -->
                 <div class="page-header">
                     <div class="page-header-icon">
                         <DocumentChartBarIcon class="header-icon" />
@@ -186,8 +159,8 @@ function formatDate(d: string | null) {
                     </div>
                 </div>
 
-                <!-- ── Tab Bar ── -->
-                <div class="tab-bar">
+                <!-- Tab Bar — shadow-sm lets global dark CSS handle background -->
+                <div class="tab-bar shadow-sm">
                     <button
                         v-for="tab in tabs"
                         :key="tab.key"
@@ -200,14 +173,11 @@ function formatDate(d: string | null) {
                     </button>
                 </div>
 
-                <!-- ══════════════════════════════════════════════════
-                     TAB: PLATFORM OVERVIEW
-                ══════════════════════════════════════════════════ -->
+                <!-- ══ TAB: PLATFORM OVERVIEW ══ -->
                 <template v-if="activeTab === 'overview'">
 
-                    <!-- KPI strip -->
                     <div class="kpi-grid">
-                        <div class="kpi-card">
+                        <div class="kpi-card shadow-sm">
                             <div class="kpi-icon-wrap" style="background:#6366f11a">
                                 <BuildingStorefrontIcon class="kpi-icon" style="color:#6366f1" />
                             </div>
@@ -217,7 +187,7 @@ function formatDate(d: string | null) {
                                 <p class="kpi-sub">+{{ ov.newVendorsThisMonth }} this month</p>
                             </div>
                         </div>
-                        <div class="kpi-card">
+                        <div class="kpi-card shadow-sm">
                             <div class="kpi-icon-wrap" style="background:#10b9811a">
                                 <CheckCircleIcon class="kpi-icon" style="color:#10b981" />
                             </div>
@@ -227,7 +197,7 @@ function formatDate(d: string | null) {
                                 <p class="kpi-sub">{{ ov.approvalRate }}% approval rate</p>
                             </div>
                         </div>
-                        <div class="kpi-card">
+                        <div class="kpi-card shadow-sm">
                             <div class="kpi-icon-wrap" style="background:#3b82f61a">
                                 <UsersIcon class="kpi-icon" style="color:#3b82f6" />
                             </div>
@@ -237,7 +207,7 @@ function formatDate(d: string | null) {
                                 <p class="kpi-sub">+{{ ov.newCustomersThisMonth }} this month</p>
                             </div>
                         </div>
-                        <div class="kpi-card">
+                        <div class="kpi-card shadow-sm">
                             <div class="kpi-icon-wrap" style="background:#f59e0b1a">
                                 <ClockIcon class="kpi-icon" style="color:#f59e0b" />
                             </div>
@@ -249,11 +219,8 @@ function formatDate(d: string | null) {
                         </div>
                     </div>
 
-                    <!-- Health + Approval rate -->
                     <div class="two-col-grid">
-
-                        <!-- Health score card -->
-                        <div class="card">
+                        <div class="card shadow-sm">
                             <div class="card-header">
                                 <div class="card-title-group">
                                     <ShieldCheckIcon class="card-title-icon" style="color:#6366f1" />
@@ -295,8 +262,7 @@ function formatDate(d: string | null) {
                             </div>
                         </div>
 
-                        <!-- Approval rate donut -->
-                        <div class="card">
+                        <div class="card shadow-sm">
                             <div class="card-header">
                                 <div class="card-title-group">
                                     <CheckCircleIcon class="card-title-icon" style="color:#10b981" />
@@ -336,18 +302,13 @@ function formatDate(d: string | null) {
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </template>
 
-                <!-- ══════════════════════════════════════════════════
-                     TAB: VENDOR PERFORMANCE
-                ══════════════════════════════════════════════════ -->
+                <!-- ══ TAB: VENDOR PERFORMANCE ══ -->
                 <template v-if="activeTab === 'vendors'">
                     <div class="two-col-grid">
-
-                        <!-- Monthly registrations chart -->
-                        <div class="card">
+                        <div class="card shadow-sm">
                             <div class="card-header">
                                 <div class="card-title-group">
                                     <ArrowTrendingUpIcon class="card-title-icon" style="color:#6366f1" />
@@ -365,19 +326,13 @@ function formatDate(d: string | null) {
                                             <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
                                         </linearGradient>
                                     </defs>
-                                    <line v-for="n in 4" :key="n"
-                                        :x1="PL" :x2="CW-PR"
-                                        :y1="PT + ((CH-PT-PB)/3)*(n-1)"
-                                        :y2="PT + ((CH-PT-PB)/3)*(n-1)"
-                                        stroke="#f1f5f9" stroke-width="1"
-                                    />
+                                    <line v-for="n in 4" :key="n" :x1="PL" :x2="CW-PR" :y1="PT + ((CH-PT-PB)/3)*(n-1)" :y2="PT + ((CH-PT-PB)/3)*(n-1)" stroke="#f1f5f9" stroke-width="1"/>
                                     <path :d="areaPath(vendorPts)" fill="url(#gv)" />
                                     <polyline :points="polyline(vendorPts)" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
                                     <circle v-for="p in vendorPts" :key="p.x" :cx="p.x" :cy="p.y" r="4" fill="white" stroke="#6366f1" stroke-width="2"/>
                                     <text v-for="l in xLabels(vendorPts)" :key="l.label" :x="l.x" :y="CH-4" text-anchor="middle" font-size="10" fill="#94a3b8" font-family="inherit">{{ l.label }}</text>
                                 </svg>
                             </div>
-                            <!-- counts row -->
                             <div class="chart-counts">
                                 <div v-for="p in vendorPts" :key="p.month" class="cc-item">
                                     <span class="cc-val">{{ p.count }}</span>
@@ -386,8 +341,7 @@ function formatDate(d: string | null) {
                             </div>
                         </div>
 
-                        <!-- Approval funnel -->
-                        <div class="card">
+                        <div class="card shadow-sm">
                             <div class="card-header">
                                 <div class="card-title-group">
                                     <ChartBarIcon class="card-title-icon" style="color:#10b981" />
@@ -401,23 +355,15 @@ function formatDate(d: string | null) {
                                 <div v-for="(step, i) in vp.approvalFunnel" :key="step.label" class="funnel-row">
                                     <span class="funnel-label">{{ step.label }}</span>
                                     <div class="funnel-track">
-                                        <div
-                                            class="funnel-fill"
-                                            :style="{
-                                                width: ((step.value / funnelMax) * 100) + '%',
-                                                background: i === 0 ? '#6366f1' : i === 1 ? '#10b981' : '#f59e0b'
-                                            }"
-                                        ></div>
+                                        <div class="funnel-fill" :style="{ width: ((step.value / funnelMax) * 100) + '%', background: i === 0 ? '#6366f1' : i === 1 ? '#10b981' : '#f59e0b' }"></div>
                                     </div>
                                     <span class="funnel-val">{{ step.value }}</span>
                                 </div>
                             </div>
                         </div>
-
                     </div>
 
-                    <!-- Top vendors table -->
-                    <div class="card">
+                    <div class="card shadow-sm">
                         <div class="card-header">
                             <div class="card-title-group">
                                 <StarIcon class="card-title-icon" style="color:#f59e0b" />
@@ -429,47 +375,26 @@ function formatDate(d: string | null) {
                         </div>
                         <div class="table-wrap">
                             <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Vendor</th>
-                                        <th>Domain</th>
-                                        <th>Joined</th>
-                                        <th>Days Active</th>
-                                    </tr>
-                                </thead>
+                                <thead><tr><th>#</th><th>Vendor</th><th>Domain</th><th>Joined</th><th>Days Active</th></tr></thead>
                                 <tbody>
                                     <tr v-for="(v, i) in vp.topVendors" :key="v.id">
                                         <td class="td-rank">{{ i + 1 }}</td>
-                                        <td>
-                                            <div class="td-name-cell">
-                                                <div class="avatar avatar-indigo">{{ initials(v.name) }}</div>
-                                                <span class="td-name">{{ v.name }}</span>
-                                            </div>
-                                        </td>
+                                        <td><div class="td-name-cell"><div class="avatar avatar-indigo">{{ initials(v.name) }}</div><span class="td-name">{{ v.name }}</span></div></td>
                                         <td class="td-mono">{{ v.domain ?? '—' }}</td>
                                         <td>{{ formatDate(v.created_at) }}</td>
-                                        <td>
-                                            <span class="days-badge">{{ v.days_active }}d</span>
-                                        </td>
+                                        <td><span class="days-badge">{{ v.days_active }}d</span></td>
                                     </tr>
-                                    <tr v-if="vp.topVendors.length === 0">
-                                        <td colspan="5" class="td-empty">No active vendors yet</td>
-                                    </tr>
+                                    <tr v-if="vp.topVendors.length === 0"><td colspan="5" class="td-empty">No active vendors yet</td></tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </template>
 
-                <!-- ══════════════════════════════════════════════════
-                     TAB: CUSTOMER ACTIVITY
-                ══════════════════════════════════════════════════ -->
+                <!-- ══ TAB: CUSTOMER ACTIVITY ══ -->
                 <template v-if="activeTab === 'customers'">
                     <div class="two-col-grid">
-
-                        <!-- Monthly signups chart -->
-                        <div class="card">
+                        <div class="card shadow-sm">
                             <div class="card-header">
                                 <div class="card-title-group">
                                     <ArrowTrendingUpIcon class="card-title-icon" style="color:#3b82f6" />
@@ -487,12 +412,7 @@ function formatDate(d: string | null) {
                                             <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
                                         </linearGradient>
                                     </defs>
-                                    <line v-for="n in 4" :key="n"
-                                        :x1="PL" :x2="CW-PR"
-                                        :y1="PT + ((CH-PT-PB)/3)*(n-1)"
-                                        :y2="PT + ((CH-PT-PB)/3)*(n-1)"
-                                        stroke="#f1f5f9" stroke-width="1"
-                                    />
+                                    <line v-for="n in 4" :key="n" :x1="PL" :x2="CW-PR" :y1="PT + ((CH-PT-PB)/3)*(n-1)" :y2="PT + ((CH-PT-PB)/3)*(n-1)" stroke="#f1f5f9" stroke-width="1"/>
                                     <path :d="areaPath(customerPts)" fill="url(#gc)" />
                                     <polyline :points="polyline(customerPts)" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
                                     <circle v-for="p in customerPts" :key="p.x" :cx="p.x" :cy="p.y" r="4" fill="white" stroke="#3b82f6" stroke-width="2"/>
@@ -507,8 +427,7 @@ function formatDate(d: string | null) {
                             </div>
                         </div>
 
-                        <!-- Verification donut -->
-                        <div class="card">
+                        <div class="card shadow-sm">
                             <div class="card-header">
                                 <div class="card-title-group">
                                     <ShieldCheckIcon class="card-title-icon" style="color:#3b82f6" />
@@ -522,36 +441,21 @@ function formatDate(d: string | null) {
                                 <svg width="120" height="120" viewBox="0 0 112 112">
                                     <circle cx="56" cy="56" :r="DONUT_R" fill="none" stroke="#f1f5f9" stroke-width="14"/>
                                     <circle cx="56" cy="56" :r="DONUT_R" fill="none" stroke="#3b82f6" stroke-width="14"
-                                        stroke-linecap="round"
-                                        :stroke-dasharray="verifyDash"
-                                        :stroke-dashoffset="CIRC * 0.25"
+                                        stroke-linecap="round" :stroke-dasharray="verifyDash" :stroke-dashoffset="CIRC * 0.25"
                                     />
                                     <text x="56" y="51" text-anchor="middle" font-size="17" font-weight="700" fill="#0f172a" font-family="inherit">{{ ca.verificationRate }}%</text>
                                     <text x="56" y="65" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="inherit">verified</text>
                                 </svg>
                                 <div class="donut-legend">
-                                    <div class="dl-row">
-                                        <span class="dl-dot" style="background:#3b82f6"></span>
-                                        <span class="dl-label">Verified</span>
-                                        <span class="dl-val">{{ ca.verified }}</span>
-                                    </div>
-                                    <div class="dl-row">
-                                        <span class="dl-dot" style="background:#e2e8f0"></span>
-                                        <span class="dl-label">Unverified</span>
-                                        <span class="dl-val">{{ ca.unverified }}</span>
-                                    </div>
-                                    <div class="dl-row">
-                                        <span class="dl-dot" style="background:#0f172a"></span>
-                                        <span class="dl-label">Total</span>
-                                        <span class="dl-val">{{ ca.totalCustomers }}</span>
-                                    </div>
+                                    <div class="dl-row"><span class="dl-dot" style="background:#3b82f6"></span><span class="dl-label">Verified</span><span class="dl-val">{{ ca.verified }}</span></div>
+                                    <div class="dl-row"><span class="dl-dot" style="background:#e2e8f0"></span><span class="dl-label">Unverified</span><span class="dl-val">{{ ca.unverified }}</span></div>
+                                    <div class="dl-row"><span class="dl-dot" style="background:#0f172a"></span><span class="dl-label">Total</span><span class="dl-val">{{ ca.totalCustomers }}</span></div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Recent signups table -->
-                    <div class="card">
+                    <div class="card shadow-sm">
                         <div class="card-header">
                             <div class="card-title-group">
                                 <UsersIcon class="card-title-icon" style="color:#3b82f6" />
@@ -563,45 +467,24 @@ function formatDate(d: string | null) {
                         </div>
                         <div class="table-wrap">
                             <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Customer</th>
-                                        <th>Email</th>
-                                        <th>Verified</th>
-                                        <th>Joined</th>
-                                    </tr>
-                                </thead>
+                                <thead><tr><th>Customer</th><th>Email</th><th>Verified</th><th>Joined</th></tr></thead>
                                 <tbody>
                                     <tr v-for="c in ca.recentSignups" :key="c.id">
-                                        <td>
-                                            <div class="td-name-cell">
-                                                <div class="avatar avatar-blue">{{ initials(c.name) }}</div>
-                                                <span class="td-name">{{ c.name }}</span>
-                                            </div>
-                                        </td>
+                                        <td><div class="td-name-cell"><div class="avatar avatar-blue">{{ initials(c.name) }}</div><span class="td-name">{{ c.name }}</span></div></td>
                                         <td class="td-mono">{{ c.email }}</td>
-                                        <td>
-                                            <span class="status-pill" :class="c.verified ? 'pill-active' : 'pill-pending'">
-                                                {{ c.verified ? 'Verified' : 'Pending' }}
-                                            </span>
-                                        </td>
+                                        <td><span class="status-pill" :class="c.verified ? 'pill-active' : 'pill-pending'">{{ c.verified ? 'Verified' : 'Pending' }}</span></td>
                                         <td>{{ formatDate(c.created_at) }}</td>
                                     </tr>
-                                    <tr v-if="ca.recentSignups.length === 0">
-                                        <td colspan="4" class="td-empty">No customers yet</td>
-                                    </tr>
+                                    <tr v-if="ca.recentSignups.length === 0"><td colspan="4" class="td-empty">No customers yet</td></tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </template>
 
-                <!-- ══════════════════════════════════════════════════
-                     TAB: CATEGORY BREAKDOWN
-                ══════════════════════════════════════════════════ -->
+                <!-- ══ TAB: CATEGORY BREAKDOWN ══ -->
                 <template v-if="activeTab === 'categories'">
-
-                    <div class="card">
+                    <div class="card shadow-sm">
                         <div class="card-header">
                             <div class="card-title-group">
                                 <Squares2X2Icon class="card-title-icon" style="color:#6366f1" />
@@ -611,39 +494,22 @@ function formatDate(d: string | null) {
                                 </div>
                             </div>
                         </div>
-
                         <div v-if="cb.breakdown.length === 0" class="empty-state">
                             <Squares2X2Icon class="empty-icon" />
                             <p>No category data yet. Approve vendors and run the category seeder.</p>
                         </div>
-
                         <div v-else class="cat-breakdown-body">
-                            <!-- Horizontal bar chart -->
                             <div class="cat-bars">
-                                <div
-                                    v-for="cat in cb.breakdown"
-                                    :key="cat.name"
-                                    class="cat-bar-row"
-                                >
+                                <div v-for="cat in cb.breakdown" :key="cat.name" class="cat-bar-row">
                                     <span class="cat-bar-label">{{ cat.name }}</span>
                                     <div class="cat-bar-track">
-                                        <div
-                                            class="cat-bar-fill"
-                                            :style="{ width: cat.pct + '%', background: cat.color }"
-                                        ></div>
+                                        <div class="cat-bar-fill" :style="{ width: cat.pct + '%', background: cat.color }"></div>
                                     </div>
                                     <span class="cat-bar-pct">{{ cat.count }} store{{ cat.count !== 1 ? 's' : '' }}</span>
                                 </div>
                             </div>
-
-                            <!-- Legend chips -->
                             <div class="cat-legend">
-                                <div
-                                    v-for="cat in cb.breakdown"
-                                    :key="cat.name"
-                                    class="cat-chip"
-                                    :style="{ background: cat.color + '18', border: `1px solid ${cat.color}40`, color: cat.color }"
-                                >
+                                <div v-for="cat in cb.breakdown" :key="cat.name" class="cat-chip" :style="{ background: cat.color + '18', border: `1px solid ${cat.color}40`, color: cat.color }">
                                     <span class="cat-chip-dot" :style="{ background: cat.color }"></span>
                                     {{ cat.name }}
                                     <span class="cat-chip-pct">{{ cat.pct }}%</span>
@@ -659,9 +525,9 @@ function formatDate(d: string | null) {
 </template>
 
 <style scoped>
+/* No background on page-container — inherits from .dashboard-content (global dark handles it) */
 .page-container {
     padding: 2rem 2.5rem;
-    background: #f1f5f9;
     min-height: 100vh;
     display: flex; flex-direction: column; gap: 1.5rem;
 }
@@ -676,64 +542,75 @@ function formatDate(d: string | null) {
 .header-icon { width: 28px; height: 28px; color: white; }
 .page-header-text h1 { font-size: 1.75rem; font-weight: 700; color: #0f172a; margin: 0 0 0.2rem; }
 .page-header-text p  { color: #64748b; margin: 0; font-size: 0.9rem; }
+:global(.dark) .page-header-text h1 { color: #f1f5f9 !important; }
+:global(.dark) .page-header-text p  { color: #94a3b8 !important; }
 
-/* ── Tab bar ── */
+/* ── Tab bar — bg white + shadow-sm so global dark CSS flips it ── */
 .tab-bar {
     display: flex; gap: 0.35rem;
-    background: white; border: 1px solid #e2e8f0;
+    background-color: white;
+    border: 1px solid #e2e8f0;
     border-radius: 12px; padding: 0.35rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     overflow-x: auto;
 }
+:global(.dark) .tab-bar { border-color: #334155 !important; }
+
+/* Unique class name avoids global .dark button reset */
 .tab-btn {
     display: inline-flex; align-items: center; gap: 0.4rem;
     padding: 0.5rem 1rem;
-    border: none; border-radius: 9px;
-    font-size: 0.83rem; font-weight: 600; color: #64748b;
-    background: transparent; cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-    white-space: nowrap;
+    border: none !important; box-shadow: none !important;
+    border-radius: 9px; font-size: 0.83rem; font-weight: 600; color: #64748b;
+    background-color: transparent !important; cursor: pointer;
+    transition: background-color 0.15s, color 0.15s; white-space: nowrap;
 }
-.tab-btn:hover  { background: #f8fafc; color: #0f172a; }
-.tab-btn.active { background: #0f172a; color: white; }
+.tab-btn:hover  { background-color: #f8fafc !important; color: #0f172a; }
+.tab-btn.active { background-color: #0f172a !important; color: white !important; }
+:global(.dark) .tab-btn        { color: #94a3b8 !important; }
+:global(.dark) .tab-btn:hover  { background-color: #334155 !important; color: #f1f5f9 !important; }
+:global(.dark) .tab-btn.active { background-color: #6366f1 !important; color: white !important; }
 .tab-icon { width: 15px; height: 15px; }
 
-/* ── Cards ── */
+/* ── Cards — bg white + shadow-sm so global dark CSS flips them ── */
 .card {
-    background: white; border-radius: 14px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    background-color: white;
+    border-radius: 14px; border: 1px solid #e2e8f0;
     overflow: hidden; display: flex; flex-direction: column;
 }
+:global(.dark) .card { border-color: #334155 !important; }
+
 .card-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 1.1rem 1.4rem 0.9rem;
-    border-bottom: 1px solid #f1f5f9; gap: 0.75rem;
+    padding: 1.1rem 1.4rem 0.9rem; border-bottom: 1px solid #f1f5f9; gap: 0.75rem;
 }
+:global(.dark) .card-header { border-bottom-color: #334155 !important; }
+
 .card-title-group { display: flex; align-items: center; gap: 0.55rem; }
 .card-title-icon  { width: 18px; height: 18px; flex-shrink: 0; }
 .card-title    { font-size: 0.92rem; font-weight: 600; color: #0f172a; margin: 0; line-height: 1.2; }
 .card-subtitle { font-size: 0.72rem; color: #94a3b8; margin: 0.1rem 0 0; }
+:global(.dark) .card-title    { color: #f1f5f9 !important; }
+:global(.dark) .card-subtitle { color: #64748b !important; }
 
-/* ── KPI grid ── */
-.kpi-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem;
-}
+/* ── KPI grid — bg white + shadow-sm ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
 .kpi-card {
-    background: white; border-radius: 14px; padding: 1.25rem;
-    border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    background-color: white; border-radius: 14px; padding: 1.25rem;
+    border: 1px solid #e2e8f0;
     display: flex; align-items: center; gap: 1rem;
     transition: transform 0.15s, box-shadow 0.15s;
 }
 .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.07); }
-.kpi-icon-wrap {
-    width: 46px; height: 46px; border-radius: 11px;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
+:global(.dark) .kpi-card { border-color: #334155 !important; }
+
+.kpi-icon-wrap { width: 46px; height: 46px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .kpi-icon  { width: 22px; height: 22px; }
 .kpi-label { font-size: 0.72rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.2rem; }
 .kpi-val   { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 0; line-height: 1; }
 .kpi-sub   { font-size: 0.72rem; color: #94a3b8; margin: 0.2rem 0 0; }
+:global(.dark) .kpi-val   { color: #f1f5f9 !important; }
+:global(.dark) .kpi-label { color: #64748b !important; }
+:global(.dark) .kpi-sub   { color: #64748b !important; }
 
 /* ── Two-col layout ── */
 .two-col-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
@@ -743,13 +620,17 @@ function formatDate(d: string | null) {
 .health-score-row { display: flex; align-items: baseline; gap: 0.3rem; }
 .health-num   { font-size: 2.2rem; font-weight: 800; line-height: 1; }
 .health-den   { font-size: 0.88rem; color: #94a3b8; }
+:global(.dark) .health-den { color: #64748b !important; }
 .health-badge { margin-left: auto; font-size: 0.7rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 99px; }
-.health-track { height: 6px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
+.health-track { height: 6px; background-color: #f1f5f9; border-radius: 99px; overflow: hidden; }
+:global(.dark) .health-track { background-color: #334155 !important; }
 .health-fill  { height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
 .health-rows  { display: flex; flex-direction: column; gap: 0.4rem; }
 .hrow { display: flex; justify-content: space-between; }
 .hrow-label { font-size: 0.74rem; color: #64748b; }
 .hrow-val   { font-size: 0.77rem; font-weight: 600; color: #0f172a; }
+:global(.dark) .hrow-label { color: #94a3b8 !important; }
+:global(.dark) .hrow-val   { color: #f1f5f9 !important; }
 
 /* ── Donut ── */
 .donut-body   { display: flex; align-items: center; gap: 1.5rem; padding: 1.1rem 1.4rem 1.25rem; }
@@ -758,87 +639,100 @@ function formatDate(d: string | null) {
 .dl-dot   { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
 .dl-label { font-size: 0.78rem; color: #64748b; flex: 1; }
 .dl-val   { font-size: 0.85rem; font-weight: 700; color: #0f172a; }
+:global(.dark) .dl-label { color: #94a3b8 !important; }
+:global(.dark) .dl-val   { color: #f1f5f9 !important; }
 
 /* ── Chart ── */
 .chart-wrap { padding: 1rem 1.4rem 0; }
 .trend-svg  { width: 100%; height: 140px; display: block; overflow: visible; }
-.chart-counts {
-    display: flex; padding: 0.5rem 1.4rem 1rem;
-    border-top: 1px solid #f8fafc;
-}
+.chart-counts { display: flex; padding: 0.5rem 1.4rem 1rem; border-top: 1px solid #f8fafc; }
+:global(.dark) .chart-counts { border-top-color: #334155 !important; }
 .cc-item  { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
 .cc-val   { font-size: 0.82rem; font-weight: 700; color: #0f172a; }
 .cc-label { font-size: 0.67rem; color: #94a3b8; }
+:global(.dark) .cc-val   { color: #f1f5f9 !important; }
+:global(.dark) .cc-label { color: #64748b !important; }
 
 /* ── Funnel ── */
 .funnel-body { padding: 1.25rem 1.4rem; display: flex; flex-direction: column; gap: 1rem; }
 .funnel-row  { display: flex; align-items: center; gap: 0.75rem; }
 .funnel-label { font-size: 0.8rem; font-weight: 600; color: #475569; width: 90px; flex-shrink: 0; }
-.funnel-track { flex: 1; height: 10px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
+.funnel-track { flex: 1; height: 10px; background-color: #f1f5f9; border-radius: 99px; overflow: hidden; }
 .funnel-fill  { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
 .funnel-val   { font-size: 0.82rem; font-weight: 700; color: #0f172a; width: 28px; text-align: right; flex-shrink: 0; }
+:global(.dark) .funnel-label { color: #cbd5e1 !important; }
+:global(.dark) .funnel-track { background-color: #334155 !important; }
+:global(.dark) .funnel-val   { color: #f1f5f9 !important; }
 
 /* ── Table ── */
 .table-wrap { overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
 .data-table thead tr { border-bottom: 1px solid #f1f5f9; }
+:global(.dark) .data-table thead tr { border-bottom-color: #334155 !important; }
 .data-table th { padding: 0.7rem 1.4rem; text-align: left; font-size: 0.72rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
 .data-table td { padding: 0.75rem 1.4rem; border-bottom: 1px solid #f8fafc; color: #334155; vertical-align: middle; }
 .data-table tbody tr:last-child td { border-bottom: none; }
-.data-table tbody tr:hover td { background: #fafbff; }
+.data-table tbody tr:hover td { background-color: #fafbff; }
+:global(.dark) .data-table th           { color: #64748b !important; }
+:global(.dark) .data-table td           { color: #cbd5e1 !important; border-bottom-color: #1e293b !important; }
+:global(.dark) .data-table tbody tr:hover td { background-color: #0f172a !important; }
+
 .td-rank { font-weight: 700; color: #94a3b8; width: 32px; }
 .td-mono { font-family: ui-monospace, monospace; font-size: 0.78rem; color: #64748b; }
 .td-empty { text-align: center; color: #94a3b8; padding: 2rem !important; }
 .td-name-cell { display: flex; align-items: center; gap: 0.6rem; }
 .td-name { font-weight: 600; color: #0f172a; }
-.days-badge { background: #f1f5f9; color: #475569; font-size: 0.72rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 99px; }
+:global(.dark) .td-name { color: #f1f5f9 !important; }
+:global(.dark) .td-mono { color: #94a3b8 !important; }
+:global(.dark) .td-rank { color: #64748b !important; }
+
+.days-badge { background-color: #f1f5f9; color: #475569; font-size: 0.72rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 99px; }
+:global(.dark) .days-badge { background-color: #334155 !important; color: #cbd5e1 !important; }
 
 /* ── Avatars ── */
 .avatar { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.67rem; font-weight: 700; flex-shrink: 0; }
-.avatar-indigo { background: #ede9fe; color: #5b21b6; }
-.avatar-blue   { background: #dbeafe; color: #1e40af; }
+.avatar-indigo { background-color: #ede9fe; color: #5b21b6; }
+.avatar-blue   { background-color: #dbeafe; color: #1e40af; }
+:global(.dark) .avatar-indigo { background-color: #4c1d95 !important; color: #e9d5ff !important; }
+:global(.dark) .avatar-blue   { background-color: #1e3a8a !important; color: #bfdbfe !important; }
 
-/* Status pills */
-.status-pill { font-size: 0.67rem; font-weight: 600; padding: 0.18rem 0.5rem; border-radius: 99px; }
-.pill-active  { background: #d1fae5; color: #065f46; }
-.pill-pending { background: #fef3c7; color: #92400e; }
+/* ── Status pills ── */
+.status-pill  { font-size: 0.67rem; font-weight: 600; padding: 0.18rem 0.5rem; border-radius: 99px; }
+.pill-active  { background-color: #d1fae5; color: #065f46; }
+.pill-pending { background-color: #fef3c7; color: #92400e; }
 
 /* ── Category breakdown ── */
 .cat-breakdown-body { padding: 1.25rem 1.4rem; display: flex; flex-direction: column; gap: 1.5rem; }
 .cat-bars { display: flex; flex-direction: column; gap: 0.75rem; }
 .cat-bar-row { display: flex; align-items: center; gap: 0.75rem; }
 .cat-bar-label { font-size: 0.8rem; font-weight: 600; color: #475569; width: 160px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cat-bar-track { flex: 1; height: 10px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
+.cat-bar-track { flex: 1; height: 10px; background-color: #f1f5f9; border-radius: 99px; overflow: hidden; }
 .cat-bar-fill  { height: 100%; border-radius: 99px; transition: width 0.6s ease; }
 .cat-bar-pct   { font-size: 0.78rem; font-weight: 600; color: #64748b; width: 64px; text-align: right; flex-shrink: 0; }
+:global(.dark) .cat-bar-label { color: #cbd5e1 !important; }
+:global(.dark) .cat-bar-track { background-color: #334155 !important; }
+:global(.dark) .cat-bar-pct   { color: #94a3b8 !important; }
 
 .cat-legend { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.cat-chip {
-    display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.3rem 0.75rem; border-radius: 99px;
-    font-size: 0.77rem; font-weight: 600;
-}
+.cat-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.75rem; border-radius: 99px; font-size: 0.77rem; font-weight: 600; }
 .cat-chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 .cat-chip-pct { opacity: 0.7; font-weight: 500; }
 
-/* Empty */
+/* ── Empty ── */
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; padding: 4rem 1rem; }
 .empty-icon  { width: 40px; height: 40px; color: #e2e8f0; }
 .empty-state p { font-size: 0.88rem; color: #94a3b8; margin: 0; text-align: center; }
+:global(.dark) .empty-icon { color: #334155; }
+:global(.dark) .empty-state p { color: #64748b !important; }
 
-/* ══════════════════
-   RESPONSIVE
-══════════════════ */
-@media (max-width: 1024px) {
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-}
+/* ── Responsive ── */
+@media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
 
 @media (max-width: 768px) {
     .page-container { padding: 1rem; gap: 1.25rem; }
     .page-header-text h1 { font-size: 1.4rem; }
     .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
     .two-col-grid { grid-template-columns: 1fr; }
-    .tab-btn span, .tab-btn .tab-icon + * { }
     .cat-bar-label { width: 110px; }
     .data-table th, .data-table td { padding: 0.65rem 1rem; }
 }
