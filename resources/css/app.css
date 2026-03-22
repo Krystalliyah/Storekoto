@@ -3,6 +3,8 @@
 @import 'tw-animate-css';
 
 @import './dashboard.css';
+/* @import './theme-bridge.css'; */
+@import './dark-theme.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -117,15 +119,22 @@
     --chart-4: hsl(43 74% 66%);
     --chart-5: hsl(27 87% 67%);
     --radius: 0.5rem;
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(0 0% 94%);
-    --sidebar-accent-foreground: hsl(0 0% 30%);
-    --sidebar-border: hsl(0 0% 91%);
+    
+    /* Keep your original brand colors for light mode */
+    --brand-green: #1b4d3e;          /* Your original green */
+    --brand-green-dark: #245c4a;     /* Your original dark green */
+    --brand-gold: #c5a059;           /* Your original gold */
+    --brand-muted: #7a8f88;          /* Your original muted */
+    
+    --sidebar-background: var(--brand-green);
+    --sidebar-foreground: #ffffff;
+    --sidebar-primary: var(--brand-green-dark);
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: var(--brand-gold);
+    --sidebar-accent-foreground: var(--brand-green);
+    --sidebar-border: rgba(197, 160, 89, 0.2);
     --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(0 0% 98%);
+    --sidebar: var(--brand-green);
 }
 
 .dark {
@@ -153,15 +162,22 @@
     --chart-3: hsl(30 80% 55%);
     --chart-4: hsl(280 65% 60%);
     --chart-5: hsl(340 75% 55%);
-    --sidebar-background: hsl(0 0% 7%);
-    --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(0 0% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(0 0% 15.9%);
+    
+    /* Keep sidebar green in dark mode but adjust for better contrast */
+    --brand-green: #1b4d3e;          /* Keep same green */
+    --brand-green-dark: #245c4a;     /* Keep same dark green */
+    --brand-gold: #d4b76a;           /* Slightly brighter gold for dark mode */
+    --brand-muted: #8fa599;          /* Slightly brighter muted for dark mode */
+    
+    --sidebar-background: var(--brand-green);
+    --sidebar-foreground: #ffffff;
+    --sidebar-primary: var(--brand-green-dark);
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: var(--brand-gold);
+    --sidebar-accent-foreground: var(--brand-green);
+    --sidebar-border: rgba(212, 183, 106, 0.2);
     --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(240 5.9% 10%);
+    --sidebar: var(--brand-green);
 }
 
 @layer base {
@@ -171,4 +187,61 @@
     body {
         @apply bg-background text-foreground;
     }
+}
+/* Brand Color Utilities - Preserves your original design with dark mode support */
+@layer utilities {
+    /* Your original brand colors - now with dark mode support */
+    .bg-brand-green { background-color: var(--brand-green); }
+    .text-brand-green { color: var(--brand-green); }
+    .border-brand-green { border-color: var(--brand-green); }
+    
+    .bg-brand-green-dark { background-color: var(--brand-green-dark); }
+    .text-brand-green-dark { color: var(--brand-green-dark); }
+    .border-brand-green-dark { border-color: var(--brand-green-dark); }
+    
+    .bg-brand-gold { background-color: var(--brand-gold); }
+    .text-brand-gold { color: var(--brand-gold); }
+    .border-brand-gold { border-color: var(--brand-gold); }
+    
+    .bg-brand-muted { background-color: var(--brand-muted); }
+    .text-brand-muted { color: var(--brand-muted); }
+    .border-brand-muted { border-color: var(--brand-muted); }
+    
+    /* Dashboard background that adapts to dark mode */
+    .dashboard-bg { 
+        background-color: hsl(var(--background)); 
+    }
+    
+    /* Hover states that work with both modes */
+    .hover-brand-green:hover { 
+        background-color: var(--brand-green); 
+        filter: brightness(0.9); 
+    }
+    .hover-brand-gold:hover { 
+        background-color: var(--brand-gold); 
+        filter: brightness(0.9); 
+    }
+    
+    /* Focus states */
+    .focus-brand-green:focus { 
+        border-color: var(--brand-green); 
+        box-shadow: 0 0 0 2px rgba(27, 77, 62, 0.1);
+    }
+}
+
+/* Override dashboard.css to work with dark mode */
+.dashboard-wrapper {
+    background: hsl(var(--background)) !important;
+}
+
+.dark .dashboard-wrapper {
+    background: hsl(var(--background)) !important;
+}
+
+h1 {
+    color: var(--brand-green-dark) !important;
+}
+
+p {
+    color: var(--brand-muted) !important;
 }

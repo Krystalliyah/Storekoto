@@ -36,13 +36,12 @@ const props = defineProps<{
 const store = ref({
   name: 'Emerald Fresh Market',
   address: '123 Green Valley Rd',
-  city: 'New York',
   phone: '(123) 456-7890',
   hours: 'Mon - Fri: 8AM - 8PM',
-  isActive: true,
+  isOpen: true,
   cover: 'https://picsum.photos/1200/400',
   logo: 'https://ui-avatars.com/api/?name=Emerald+Fresh',
-})
+}) 
 
 // Mock Products
 const products = ref([
@@ -217,7 +216,7 @@ const removeSelected = () => {
                             <!-- Address -->
                             <div>
                             <p class="text-base text-muted-foreground">
-                                {{ store.address }}, {{ store.city }}
+                                {{ store.address }}
                             </p>
                             <p class="text-sm text-muted-foreground">
                                 {{ store.phone }}
@@ -229,11 +228,11 @@ const removeSelected = () => {
                         <!-- Right: Status -->
                         <span
                             class="px-4 py-1.5 text-sm rounded-full font-medium"
-                            :class="store.isActive
+                            :class="store.isOpen
                             ? 'bg-green-100 text-green-700'
                             : 'bg-red-100 text-red-700'"
                         >
-                            {{ store.isActive ? 'Open' : 'Closed' }}
+                            {{ store.isOpen ? 'Open' : 'Closed' }}
                         </span>
 
                         </div>
@@ -337,7 +336,7 @@ const removeSelected = () => {
                         <!-- Top Badge -->
                         <span
                         v-if="!product.is_available"
-                        class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md"
+                        class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-xl"
                         >
                         Sold Out
                         </span>
@@ -508,7 +507,7 @@ const removeSelected = () => {
                         <div class="flex items-center gap-2 text-sm">
 
                             <button
-                            class="h-7 w-7 border rounded-md flex items-center justify-center hover:bg-muted transition"
+                            class="h-7 w-7 border rounded-xl flex items-center justify-center hover:bg-muted transition"
                             @click="item.quantity > 1 && item.quantity--"
                             >
                             -
@@ -519,7 +518,7 @@ const removeSelected = () => {
                             </span>
 
                             <button
-                            class="h-7 w-7 border rounded-md flex items-center justify-center hover:bg-muted transition"
+                            class="h-7 w-7 border rounded-xl flex items-center justify-center hover:bg-muted transition"
                             @click="item.quantity++"
                             >
                             +
