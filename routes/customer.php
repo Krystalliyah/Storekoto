@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\StoreController;
 use App\Http\Controllers\Api\CustomerOrderController;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CartController;
 
 Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->name('customer.')->group(function () {
         Route::controller(\App\Http\Controllers\Customer\CustomerPageController::class)->group(function () {
@@ -21,14 +23,14 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
         Route::get('/stores-data/{id}/products', [StoreController::class, 'products']);
         
         // Categories API Route
-        Route::get('/categories', [\App\Http\Controllers\Api\CategoryController::class, 'index']);
+        Route::get('/categories', [CategoryController::class, 'index']);
         
         // Cart API Routes
-        Route::get('/cart-data', [\App\Http\Controllers\Api\CartController::class, 'index']);
-        Route::post('/cart/add', [\App\Http\Controllers\Api\CartController::class, 'add']);
-        Route::put('/cart/{cart}', [\App\Http\Controllers\Api\CartController::class, 'update']);
-        Route::delete('/cart/{cart}', [\App\Http\Controllers\Api\CartController::class, 'destroy']);
-        Route::delete('/cart', [\App\Http\Controllers\Api\CartController::class, 'clear']);
+        Route::get('/cart-data', [CartController::class, 'index']);
+        Route::post('/cart/add', [CartController::class, 'add']);
+        Route::put('/cart/{cart}', [CartController::class, 'update']);
+        Route::delete('/cart/{cart}', [CartController::class, 'destroy']);
+        Route::delete('/cart', [CartController::class, 'clear']);
 
         // Orders Page API Routes
         Route::get('/orders-data', [CustomerOrderController::class, 'index'])->name('orders.data');

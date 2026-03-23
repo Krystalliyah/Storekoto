@@ -17,6 +17,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu'
+import { toast } from 'vue-sonner'
+
 const { isCollapsed } = useSidebar();
 const page = usePage();
 const contentClass = computed(() => ({
@@ -121,20 +123,20 @@ const selectedCategory = ref<'all' | number>('all')
 const sortBy = ref<'name' | 'price_low' | 'price_high'>('name')
 
 const addToCart = (product: any) => {
-  router.post('/customer/cart/add', {
-    store_id: product.store.id,
-    product_id: product.id,
-    quantity: 1
-  }, {
-    preserveScroll: true,
-    onSuccess: () => {
-      alert('Product added to cart!')
+  router.post(
+    '/customer/cart/add',
+    {
+      store_id: product.store.id,
+      product_id: product.id,
+      quantity: 1,
     },
-    onError: (errors) => {
-      console.error('Errors:', errors)
-      alert('Failed to add to cart')
+    {
+      preserveScroll: true,
+      onError: (errors) => {
+        console.error('Errors:', errors)
+      },
     }
-  })
+  )
 }
 
 const filteredProducts = computed(() => {

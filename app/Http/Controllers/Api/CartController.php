@@ -53,23 +53,29 @@ class CartController extends Controller
     public function add(Request $request)
     {
         $validated = $request->validate([
-            'store_id' => 'required|string',
-            'product_id' => 'required|integer',
-            'quantity' => 'required|integer|min:1',
+            'store_id' => ['required', 'string'],
+            'product_id' => ['required', 'integer'],
+            'quantity' => ['required', 'integer', 'min:1'],
         ]);
 
-        $cart = Cart::updateOrCreate(
-            [
-                'user_id' => auth()->id(),
-                'store_id' => $validated['store_id'],
-                'product_id' => $validated['product_id'],
-            ],
-            [
-                'quantity' => $validated['quantity'],
-            ]
-        );
+        try {
+            Cart::updateOrCreate(
+                [
+                    'user_id' => auth()->id(),
+                    'store_id' => $validated['store_id'],
+                    'product_id' => $validated['product_id'],
+                ],
+                [
+                    'quantity' => $validated['quantity'],
+                ]
+            );
 
-        return back()->with('success', 'Product added to cart');
+            return back()->with('success', 'Product added to cart.');
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Failed to add product to cart.');
+        }
     }
 
     public function update(Request $request, Cart $cart)
