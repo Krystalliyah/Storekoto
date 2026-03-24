@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/card';
 import { send } from '@/routes/verification';
 import { useSidebar } from '@/composables/useSidebar';
+import { toast } from 'vue-sonner';
 
 const { isCollapsed } = useSidebar();
 
@@ -60,6 +61,10 @@ const initials = computed(() => {
         .slice(0, 2)
         .toUpperCase();
 });
+
+const handleSuccess = () => {
+    toast.success('Changes saved.')
+}
 </script>
 
 <template>
@@ -182,6 +187,7 @@ const initials = computed(() => {
 
                                 <Form
                                     v-bind="ProfileController.update.form()"
+                                    @success="handleSuccess"
                                     class="space-y-6"
                                     v-slot="{ errors, processing, recentlySuccessful }"
                                 >
