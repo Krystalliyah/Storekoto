@@ -20,12 +20,20 @@ class PreventBackHistory
         $response->headers->set('Expires', '0');
 
         // If this was a logout POST and the user is now guest, instruct Inertia
-        // to perform a full page redirect to the central login page so that
+        // to perform a full page redirect to the appropriate login page so that
         // client-side history/state is replaced and back/forward won't show
         // the protected dashboard.
         if ($request->isMethod('post') && $request->is('logout') && auth()->guest()) {
             $scheme = parse_url(config('app.url'), PHP_URL_SCHEME) ?: 'http';
-            $location = $scheme . '://' . config('app.domain') . '/login';
+
+            // If on a tenant subdomain, redirect to that subdomain's login page
+            // so the vendor lands back on their own domain, not the central domain.
+            if (function_exists('tenancy') && tenancy()->initialized) {
+                $host = $request->getHost();
+                $location = $scheme . '://' . $host . '/login';
+            } else {
+                $location = $scheme . '://' . config('app.domain') . '/login';
+            }
 
             $response->headers->set('X-Inertia-Location', $location);
             $response->setStatusCode(409);
