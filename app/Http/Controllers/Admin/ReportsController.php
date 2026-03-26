@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Tenant;
+use App\Services\PlatformHealthService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
@@ -167,17 +168,28 @@ class ReportsController extends Controller
             })
             ->filter(fn ($row) => $row['count'] > 0)
             ->values();
+        // Health score — canonical formula via PlatformHealthService
+        $phs = PlatformHealthService::compute(
+            totalVendors:          $totalVendors,
+            activeVendors:         $activeVendors,
+            totalCustomers:        $totalCustomers,
+            verifiedCustomers:     $verifiedCustomers,
+            newCustomersThisMonth: $newCustomersThisMonth,
+            newVendorsThisMonth:   $newVendorsThisMonth,
+        );
+        $healthScore = $phs['score'];
         
         return Inertia::render('admin/Reports', [
             'overview' => [
-                'totalVendors' => $totalVendors,
-                'activeVendors' => $activeVendors,
-                'pendingVendors' => $pendingVendors,
-                'totalCustomers' => $totalCustomers,
-                'approvalRate' => $approvalRate,
-                'newVendorsThisMonth' => $newVendorsThisMonth,
-                'newCustomersThisMonth' => $newCustomersThisMonth,
-                'healthScore' => $healthScore,
+                'totalVendors'         => $totalVendors,
+                'activeVendors'        => $activeVendors,
+                'pendingVendors'       => $pendingVendors,
+                'totalCustomers'       => $totalCustomers,
+                'approvalRate'         => $approvalRate,
+                'newVendorsThisMonth'  => $newVendorsThisMonth,
+                'newCustomersThisMonth'=> $newCustomersThisMonth,
+                'healthScore'          => $healthScore,
+                'healthComponents'     => $phs['components'],
             ],
             'vendorPerformance' => [
                 'topVendors' => $topVendors,
