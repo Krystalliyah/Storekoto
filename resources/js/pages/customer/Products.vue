@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Head, usePage, router } from '@inertiajs/vue3';
-import { ref, computed, onMounted } from 'vue';
+import { Head, usePage } from '@inertiajs/vue3';
+import { ref, computed, onMounted, watch } from 'vue';
+import { watchDebounced } from '@vueuse/core';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import CustomerNav from '@/components/navigation/CustomerNav.vue';
@@ -30,6 +31,11 @@ const categories = ref<any[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+// Filter state - declare before using in functions
+const searchProduct = ref('')
+const selectedCategory = ref<'all' | number>('all')
+const sortBy = ref<'name' | 'price_low' | 'price_high'>('name')
+
 // Fetch all categories from API
 const fetchCategories = async () => {
   try {
@@ -51,13 +57,31 @@ const fetchCategories = async () => {
   }
 }
 
-// Fetch all products from all stores via API
+// Fetch all products from all stores via API with filters
 const fetchAllProducts = async () => {
   try {
     loading.value = true
     error.value = null
     
-    const response = await fetch('/customer/stores-data', {
+    // Build query parameters
+    const params = new URLSearchParams()
+    
+    if (searchProduct.value) {
+      params.append('search', searchProduct.value)
+    }
+    
+    if (selectedCategory.value !== 'all') {
+      params.append('category_id', selectedCategory.value.toString())
+    }
+    
+    if (sortBy.value) {
+      params.append('sort_by', sortBy.value)
+    }
+    
+    const queryString = params.toString()
+    const url = `/customer/products-data${queryString ? '?' + queryString : ''}`
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -70,39 +94,9 @@ const fetchAllProducts = async () => {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
     
-    const storesData = await response.json()
-    const allProducts: any[] = []
+    const data = await response.json()
+    products.value = data.data || []
     
-    // Fetch products from each store
-    for (const store of storesData.data) {
-      try {
-        const productsResponse = await fetch(`/customer/stores-data/${store.id}/products`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        })
-        
-        if (productsResponse.ok) {
-          const productsData = await productsResponse.json()
-          const storeProducts = productsData.data.map((product: any) => ({
-            ...product,
-            store: {
-              id: store.id,
-              name: store.name,
-              logo: store.logo
-            }
-          }))
-          allProducts.push(...storeProducts)
-        }
-      } catch (err) {
-        console.error(`Error fetching products for store ${store.id}:`, err)
-      }
-    }
-    
-    products.value = allProducts
   } catch (err) {
     console.error('Error fetching products:', err)
     error.value = err instanceof Error ? err.message : 'Failed to load products'
@@ -116,60 +110,51 @@ onMounted(() => {
   fetchAllProducts()
 })
 
-const searchProduct = ref('')
-const selectedCategory = ref<'all' | number>('all')
-const sortBy = ref<'name' | 'price_low' | 'price_high'>('name')
+// Watch for filter changes and refetch (debounced for search)
+watchDebounced(searchProduct, () => {
+  fetchAllProducts()
+}, { debounce: 300 })
 
-const addToCart = (product: any) => {
-  router.post('/customer/cart/add', {
-    store_id: product.store.id,
-    product_id: product.id,
-    quantity: 1
-  }, {
-    preserveScroll: true,
-    onSuccess: () => {
-      alert('Product added to cart!')
-    },
-    onError: (errors) => {
-      console.error('Errors:', errors)
-      alert('Failed to add to cart')
-    }
-  })
+watch([selectedCategory, sortBy], () => {
+  fetchAllProducts()
+})
+
+const toast = ref<{ message: string; type: 'success' | 'error' } | null>(null)
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+
+const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+  if (toastTimer) clearTimeout(toastTimer)
+  toast.value = { message, type }
+  toastTimer = setTimeout(() => { toast.value = null }, 3000)
 }
 
-const filteredProducts = computed(() => {
-  let result = products.value.filter(product => {
+const addToCart = async (product: any) => {
+  try {
+    const response = await fetch('/customer/cart/add', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '',
+      },
+      body: JSON.stringify({
+        store_id: product.store.id,
+        product_id: product.id,
+        quantity: 1,
+      }),
+    })
 
-    const matchesSearch =
-      product.product_name
-        .toLowerCase()
-        .includes(searchProduct.value.toLowerCase())
-
-    const matchesCategory =
-      selectedCategory.value === 'all'
-        ? true
-        : product.category_id === selectedCategory.value
-
-    return (
-      matchesSearch &&
-      matchesCategory &&
-      product.is_active
-    )
-  })
-
-  // Sorting
-  if (sortBy.value === 'price_low') {
-    result.sort((a, b) => a.unit_price - b.unit_price)
-  } else if (sortBy.value === 'price_high') {
-    result.sort((a, b) => b.unit_price - a.unit_price)
-  } else {
-    result.sort((a, b) =>
-      a.product_name.localeCompare(b.product_name)
-    )
+    if (!response.ok) throw new Error('Failed to add to cart')
+    showToast(`"${product.product_name}" added to cart!`)
+  } catch (err) {
+    console.error(err)
+    showToast('Failed to add to cart. Please try again.', 'error')
   }
+}
 
-  return result
-})
+// Products are already filtered and sorted by the API
+const filteredProducts = computed(() => products.value)
 
 </script>
 
@@ -357,11 +342,10 @@ const filteredProducts = computed(() => {
                     <!-- Add Button -->
                     <Button
                     size="sm"
-                    :disabled="!product.is_available"
                     class="w-full mt-2 mb-4 bg-[#245c4a] hover:bg-[#1B4D3E] text-white"
                     @click="addToCart(product)"
                     >
-                    Add to Cart
+                    {{ product.is_available ? '``Add to ``Cart' : 'Add to Cart (Low Stock)' }}
                     </Button>
 
                 </CardContent>
@@ -392,4 +376,32 @@ const filteredProducts = computed(() => {
             </div>
         </main>
     </div>
+
+    <!-- Toast Notification -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="translate-y-4 opacity-0"
+        enter-to-class="translate-y-0 opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="translate-y-0 opacity-100"
+        leave-to-class="translate-y-4 opacity-0"
+      >
+        <div
+          v-if="toast"
+          class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-sm font-medium"
+          :class="toast.type === 'success'
+            ? 'bg-[#245c4a] text-white'
+            : 'bg-red-600 text-white'"
+        >
+          <span v-if="toast.type === 'success'" class="text-lg">🛒</span>
+          <span v-else class="text-lg">⚠️</span>
+          {{ toast.message }}
+          <button
+            class="ml-2 opacity-70 hover:opacity-100 transition-opacity"
+            @click="toast = null"
+          >✕</button>
+        </div>
+      </Transition>
+    </Teleport>
 </template>
