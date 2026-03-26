@@ -9,6 +9,9 @@ use App\Services\PlatformHealthService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 
 class ReportsController extends Controller
 {
@@ -113,6 +116,58 @@ class ReportsController extends Controller
         $unverifiedCustomers = $totalCustomers - $verifiedCustomers;
         $verificationRate = $totalCustomers > 0 ? round(($verifiedCustomers / $totalCustomers) * 100) : 0;
         
+        // Health score calculation (simple example)
+        $healthScore = min(100, round(
+            ($approvalRate * 0.4) + 
+            ($verificationRate * 0.3) + 
+            (min(100, $newCustomersThisMonth * 10) * 0.2) + 
+            (min(100, $newVendorsThisMonth * 10) * 0.1)
+        ));
+
+        $approvedTenants = Tenant::where('is_approved', true)->get();
+
+        $centralCategories = Category::orderBy('name')->get();
+
+        // Start every category with zero stores
+        $categoryStoreCounts = [];
+        foreach ($centralCategories as $category) {
+            $categoryStoreCounts[$category->id] = 0;
+        }
+
+        // Loop through each approved tenant and count which categories appear in that tenant
+        foreach ($approvedTenants as $tenant) {
+            $tenant->run(function () use (&$categoryStoreCounts) {
+                $usedCategoryIds = Product::query()
+                    ->whereNotNull('category_id')
+                    ->distinct()
+                    ->pluck('category_id');
+
+                foreach ($usedCategoryIds as $categoryId) {
+                    if (array_key_exists($categoryId, $categoryStoreCounts)) {
+                        $categoryStoreCounts[$categoryId]++;
+                    }
+                }
+            });
+        }
+
+        $totalStores = $approvedTenants->count();
+
+        $categoryBreakdown = $centralCategories
+            ->map(function ($category) use ($categoryStoreCounts, $totalStores) {
+                $count = $categoryStoreCounts[$category->id] ?? 0;
+
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'color' => $category->color ?: '#6366f1',
+                    'count' => $count,
+                    'pct' => $totalStores > 0
+                        ? round(($count / $totalStores) * 100)
+                        : 0,
+                ];
+            })
+            ->filter(fn ($row) => $row['count'] > 0)
+            ->values();
         // Health score — canonical formula via PlatformHealthService
         $phs = PlatformHealthService::compute(
             totalVendors:          $totalVendors,
@@ -154,8 +209,8 @@ class ReportsController extends Controller
                 'recentSignups' => $recentCustomers,
             ],
             'categoryBreakdown' => [
-                'breakdown' => [], // You can add category data later
-                'totalUnique' => 0,
+                'breakdown' => $categoryBreakdown,
+                'totalUnique' => $categoryBreakdown->count(),
             ],
         ]);
     }
