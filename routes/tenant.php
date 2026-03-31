@@ -7,6 +7,7 @@ use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 use Inertia\Inertia;
 use App\Http\Controllers\Vendor\AnalyticsController;
+use App\Http\Controllers\Vendor\ExpenseController;
 
 
 /*
@@ -170,7 +171,10 @@ Route::middleware([
             Route::put('staff/{user}/permissions', [App\Http\Controllers\Vendor\StaffManagementController::class, 'updatePermissions'])->name('staff.update-permissions');
         });
         
-        Route::get('/expenses', fn() => inertia('vendor/Expenses'))->name('expenses')->middleware('permission:view-expenses');
+        Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses')->middleware('permission:view-expenses');
+        Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store')->middleware('permission:view-expenses');
+        Route::put('/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update')->middleware('permission:view-expenses');
+        Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy')->middleware('permission:view-expenses');
         Route::get('/analytics', AnalyticsController::class)
             ->name('analytics')
             ->middleware('permission:view-analytics');

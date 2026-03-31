@@ -126,10 +126,12 @@ let pollTimer: ReturnType<typeof setInterval> | null = null;
 function startPolling() {
   stopPolling();
   pollTimer = setInterval(() => {
-    if (props.currentOrder) {
+    if (props.currentOrder && !['picked_up', 'cancelled'].includes(props.currentOrder.status)) {
       router.reload({ only: ['currentOrder'] });
+    } else {
+      stopPolling();
     }
-  }, 15000); // every 15 seconds
+  }, 8000); // every 8 seconds
 }
 
 function stopPolling() {

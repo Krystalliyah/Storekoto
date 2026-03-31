@@ -16,9 +16,10 @@ class CustomerPageController extends Controller
     {
         $user = $request->user();
 
-        // Current active order (latest non-picked-up order)
+        // Current active order — show until picked_up/completed so the customer
+        // sees the final "Picked Up" state before it moves to recent orders
         $currentOrder = CustomerOrder::where('user_id', $user->id)
-            ->whereNotIn('status', ['picked_up', 'cancelled'])
+            ->whereNotIn('status', ['cancelled'])
             ->latest('ordered_at')
             ->first();
 
