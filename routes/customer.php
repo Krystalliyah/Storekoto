@@ -44,4 +44,5 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
         // Orders Page API Routes
         Route::get('/orders-data', [CustomerOrderController::class, 'index'])->name('orders.data');
         Route::get('/orders-data/{id}', [CustomerOrderController::class, 'show'])->name('orders.show.data');
+        Route::post('/orders/{id}/cancel', [CustomerOrderController::class, 'cancel'])->name('orders.cancel');
 });
