@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import {
     Bell,
@@ -34,18 +34,27 @@ const storeName = computed(() => tenantInfo.value?.name ?? 'iTinda Vendor Store'
 
 const saveLabel = ref('Changes not yet published');
 
-const storeForm = ref({
-    storeName: storeName.value,
-    storeSlug: tenantInfo.value?.slug ?? 'itinda-vendor-store',
-    tagline: 'Fresh, student-friendly favorites ready for quick campus pick-up.',
-    email: tenantInfo.value?.email ?? 'vendor@itinda.test',
-    phone: tenantInfo.value?.phone ?? '+63 912 345 6789',
-    pickupAddress: tenantInfo.value?.address ?? 'Main Campus Arcade, Ground Floor',
-    pickupNotes: 'Please present your order receipt upon pick-up. Orders are typically ready within 20–30 minutes.',
-    about: 'We serve affordable meals, drinks, and daily essentials tailored for fast and convenient campus pick-up.',
-    website: 'itinda.app/store/vendor-store',
-    pickupLeadTime: '20–30 mins',
-    orderNotice: '30 mins',
+const storeForm = useForm({
+    store_name: tenantInfo.value?.name ?? '',
+    store_slug: tenantInfo.value?.id ?? '',
+    tagline: tenantInfo.value?.data?.tagline ?? '',
+    email: tenantInfo.value?.email ?? '',
+    phone: tenantInfo.value?.phone ?? '',
+    address: tenantInfo.value?.address ?? '',
+    pickup_notes: tenantInfo.value?.data?.pickup_notes ?? '',
+    description: tenantInfo.value?.description ?? '',
+    website: tenantInfo.value?.data?.website ?? '',
+    pickup_lead_time: tenantInfo.value?.data?.pickup_lead_time ?? '',
+    order_notice: tenantInfo.value?.data?.order_notice ?? '',
+    operating_hours: tenantInfo.value?.operating_hours ?? {
+        monday: { is_open: true, open_time: '08:00', close_time: '18:00' },
+        tuesday: { is_open: true, open_time: '08:00', close_time: '18:00' },
+        wednesday: { is_open: true, open_time: '08:00', close_time: '18:00' },
+        thursday: { is_open: true, open_time: '08:00', close_time: '18:00' },
+        friday: { is_open: true, open_time: '08:00', close_time: '18:00' },
+        saturday: { is_open: true, open_time: '09:00', close_time: '15:00' },
+        sunday: { is_open: false, open_time: '09:00', close_time: '15:00' },
+    },
 });
 
 const toggles = ref({
@@ -58,14 +67,19 @@ const toggles = ref({
 });
 
 const hours = ref([
-    { day: 'Monday', open: '08:00', close: '18:00', enabled: true },
-    { day: 'Tuesday', open: '08:00', close: '18:00', enabled: true },
-    { day: 'Wednesday', open: '08:00', close: '18:00', enabled: true },
-    { day: 'Thursday', open: '08:00', close: '18:00', enabled: true },
-    { day: 'Friday', open: '08:00', close: '18:00', enabled: true },
-    { day: 'Saturday', open: '09:00', close: '15:00', enabled: true },
-    { day: 'Sunday', open: '09:00', close: '15:00', enabled: false },
-]);
+    { key: 'monday', day: 'Monday', ...(tenantInfo.value?.operating_hours?.monday ?? { is_open: true, open_time: '08:00', close_time: '18:00' }) },
+    { key: 'tuesday', day: 'Tuesday', ...(tenantInfo.value?.operating_hours?.tuesday ?? { is_open: true, open_time: '08:00', close_time: '18:00' }) },
+    { key: 'wednesday', day: 'Wednesday', ...(tenantInfo.value?.operating_hours?.wednesday ?? { is_open: true, open_time: '08:00', close_time: '18:00' }) },
+    { key: 'thursday', day: 'Thursday', ...(tenantInfo.value?.operating_hours?.thursday ?? { is_open: true, open_time: '08:00', close_time: '18:00' }) },
+    { key: 'friday', day: 'Friday', ...(tenantInfo.value?.operating_hours?.friday ?? { is_open: true, open_time: '08:00', close_time: '18:00' }) },
+    { key: 'saturday', day: 'Saturday', ...(tenantInfo.value?.operating_hours?.saturday ?? { is_open: true, open_time: '09:00', close_time: '15:00' }) },
+    { key: 'sunday', day: 'Sunday', ...(tenantInfo.value?.operating_hours?.sunday ?? { is_open: false, open_time: '09:00', close_time: '15:00' }) },
+].map((day) => ({
+    ...day,
+    enabled: day.is_open,
+    open: day.open_time,
+    close: day.close_time,
+})));
 
 const completionItems = computed(() => [
     { label: 'Store profile', done: true },
@@ -79,7 +93,35 @@ const completedCount = computed(() => completionItems.value.filter((item) => ite
 const setupProgress = computed(() => Math.round((completedCount.value / completionItems.value.length) * 100));
 
 const saveChanges = () => {
-    saveLabel.value = 'Changes saved locally';
+    const formattedHours = hours.value.reduce((acc, day) => {
+        acc[day.key] = {
+            is_open: day.enabled,
+            open_time: day.open,
+            close_time: day.close,
+        };
+        return acc;
+    }, {} as Record<string, { is_open: boolean; open_time: string; close_time: string }>);
+
+    storeForm.transform((data) => ({
+        store_name: data.store_name,
+        email: data.email,
+        description: data.description,
+        address: data.address,
+        phone: data.phone,
+        operating_hours: formattedHours,
+        tagline: data.tagline,
+        pickup_notes: data.pickup_notes,
+        website: data.website,
+        pickup_lead_time: data.pickup_lead_time,
+        order_notice: data.order_notice,
+    })).put('/vendor/store-settings', {
+        onSuccess: () => {
+            saveLabel.value = 'Changes saved';
+        },
+        onError: () => {
+            saveLabel.value = 'Could not save changes';
+        },
+    });
 };
 </script>
 
@@ -116,12 +158,12 @@ const saveChanges = () => {
             <div class="grid gap-3 sm:grid-cols-3 lg:min-w-[430px]">
                 <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">Lead time</p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ storeForm.pickupLeadTime }}</p>
+                    <p class="mt-2 text-xl font-semibold !text-white">{{ storeForm.pickup_lead_time }}</p>
                 </div>
 
                 <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#DDE9E4]">Order notice</p>
-                    <p class="mt-2 text-xl font-semibold !text-white">{{ storeForm.orderNotice }}</p>
+                    <p class="mt-2 text-xl font-semibold !text-white">{{ storeForm.order_notice }}</p>
                 </div>
 
                 <div class="rounded-2xl border border-white/15 bg-white/15 px-4 py-4 backdrop-blur-sm">
@@ -162,7 +204,7 @@ const saveChanges = () => {
                                 <label class="block">
                                     <span class="mb-2 block text-sm font-medium text-[#183D34]">Store name</span>
                                     <input
-                                        v-model="storeForm.storeName"
+                                        v-model="storeForm.store_name"
                                         type="text"
                                         class="h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
                                     />
@@ -175,7 +217,7 @@ const saveChanges = () => {
                                             itinda.app/store/
                                         </span>
                                         <input
-                                            v-model="storeForm.storeSlug"
+                                            v-model="storeForm.store_slug"
                                             type="text"
                                             class="h-11 min-w-0 flex-1 bg-transparent px-4 text-sm text-[#1E4138] outline-none"
                                         />
@@ -221,7 +263,7 @@ const saveChanges = () => {
                                         Pick-up address
                                     </span>
                                     <input
-                                        v-model="storeForm.pickupAddress"
+                                        v-model="storeForm.address"
                                         type="text"
                                         class="h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
                                     />
@@ -230,7 +272,7 @@ const saveChanges = () => {
                                 <label class="block md:col-span-2">
                                     <span class="mb-2 block text-sm font-medium text-[#183D34]">About your store</span>
                                     <textarea
-                                        v-model="storeForm.about"
+                                        v-model="storeForm.description"
                                         rows="4"
                                         class="w-full rounded-2xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 py-3 text-sm leading-6 text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
                                     ></textarea>
@@ -254,7 +296,7 @@ const saveChanges = () => {
                                 <label class="block">
                                     <span class="mb-2 block text-sm font-medium text-[#183D34]">Estimated lead time</span>
                                     <input
-                                        v-model="storeForm.pickupLeadTime"
+                                        v-model="storeForm.pickup_lead_time"
                                         type="text"
                                         class="h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
                                     />
@@ -263,7 +305,7 @@ const saveChanges = () => {
                                 <label class="block">
                                     <span class="mb-2 block text-sm font-medium text-[#183D34]">Customer order notice</span>
                                     <input
-                                        v-model="storeForm.orderNotice"
+                                        v-model="storeForm.order_notice"
                                         type="text"
                                         class="h-11 w-full rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 text-sm text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
                                     />
@@ -272,7 +314,7 @@ const saveChanges = () => {
                                 <label class="block md:col-span-2">
                                     <span class="mb-2 block text-sm font-medium text-[#183D34]">Pick-up instructions</span>
                                     <textarea
-                                        v-model="storeForm.pickupNotes"
+                                        v-model="storeForm.pickup_notes"
                                         rows="3"
                                         class="w-full rounded-2xl border border-[#D7E3DC] bg-[#FAFCFB] px-4 py-3 text-sm leading-6 text-[#1E4138] outline-none transition focus:border-[#245C4A] focus:ring-2 focus:ring-[#245C4A]/10"
                                     ></textarea>
@@ -431,9 +473,9 @@ const saveChanges = () => {
                             <div class="space-y-3 text-sm leading-6 text-[#6C8079]">
                                 <p>
                                     Your store currently shows a
-                                    <span class="font-semibold text-[#183D34]">{{ storeForm.pickupLeadTime }}</span>
+                                    <span class="font-semibold text-[#183D34]">{{ storeForm.pickup_lead_time }}</span>
                                     estimated lead time and a customer notice of
-                                    <span class="font-semibold text-[#183D34]">{{ storeForm.orderNotice }}</span>.
+                                    <span class="font-semibold text-[#183D34]">{{ storeForm.order_notice }}</span>.
                                 </p>
 
                                 <div class="rounded-2xl border border-dashed border-[#CBD9D2] bg-white p-4">

@@ -21,7 +21,8 @@ use App\Http\Controllers\Vendor\AnalyticsController;
 |
 */
 
-
+use App\Http\Controllers\Vendor\ProfileController;
+use App\Http\Controllers\Vendor\StoreSettingsController;
 use App\Http\Controllers\Vendor\ProductController;
 use App\Http\Controllers\Vendor\InventoryController;
 use App\Http\Controllers\Vendor\OrderController;
@@ -126,7 +127,8 @@ Route::middleware([
                 'lowStockItems' => $lowStockItems,
             ]);
         })->name('dashboard');
-        Route::get('/profile', fn() => inertia('vendor/Profile'))->name('profile');
+        Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     });
 
     Route::middleware(['auth', 'verified', 'role:vendor|staff', 'vendor.is_approved'])->prefix('vendor')->name('vendor.')->group(function () {
@@ -144,7 +146,13 @@ Route::middleware([
         Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel')->middleware('permission:manage-orders');
 
         // Management routes
-        Route::get('/store-settings', fn() => inertia('vendor/StoreSettings'))->name('store.settings')->middleware('permission:manage-store-settings');
+        Route::get('/store-settings', [StoreSettingsController::class, 'show'])
+            ->name('store.settings')
+            ->middleware('permission:manage-store-settings');
+
+        Route::put('/store-settings', [StoreSettingsController::class, 'update'])
+            ->name('store.settings.update')
+            ->middleware('permission:manage-store-settings');
         
         // Staff Management
         Route::middleware('permission:manage-staff')->group(function() {
