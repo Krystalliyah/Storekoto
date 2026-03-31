@@ -146,13 +146,23 @@ Route::middleware([
         Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel')->middleware('permission:manage-orders');
 
         // Management routes
-        Route::get('/store-settings', [StoreSettingsController::class, 'show'])
-            ->name('store.settings')
-            ->middleware('permission:manage-store-settings');
-
-        Route::put('/store-settings', [StoreSettingsController::class, 'update'])
-            ->name('store.settings.update')
-            ->middleware('permission:manage-store-settings');
+        Route::get('/store-settings', function() {
+            $tenant = tenant();
+            $domain = $tenant->domains->first()?->domain ?? null;
+            return inertia('vendor/StoreSettings', [
+                'tenantInfo' => [
+                    'id'             => $tenant->id,
+                    'name'           => $tenant->name,
+                    'email'          => $tenant->email,
+                    'phone'          => $tenant->phone ?? null,
+                    'address'        => $tenant->address ?? null,
+                    'slug'           => $tenant->id,
+                    'domain'         => $domain,
+                    'description'    => $tenant->description ?? null,
+                    'operating_hours'=> $tenant->operating_hours ?? null,
+                ],
+            ]);
+        })->name('store.settings')->middleware('permission:manage-store-settings');
         
         // Staff Management
         Route::middleware('permission:manage-staff')->group(function() {

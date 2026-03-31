@@ -30,7 +30,7 @@ const contentClass = computed(() => ({
 }));
 
 const tenantInfo = computed(() => (page.props as any).tenantInfo ?? (page.props as any).store ?? {});
-const storeName = computed(() => tenantInfo.value?.name ?? 'iTinda Vendor Store');
+const storeName = computed(() => tenantInfo.value?.name ?? '');
 
 const saveLabel = ref('Changes not yet published');
 
@@ -56,6 +56,8 @@ const storeForm = useForm({
         sunday: { is_open: false, open_time: '09:00', close_time: '15:00' },
     },
 });
+
+const storeDomain = computed(() => tenantInfo.value?.domain ?? null);
 
 const toggles = ref({
     acceptPreOrders: true,
@@ -212,16 +214,19 @@ const saveChanges = () => {
 
                                 <label class="block">
                                     <span class="mb-2 block text-sm font-medium text-[#183D34]">Store slug</span>
-                                    <div class="flex overflow-hidden rounded-xl border border-[#D7E3DC] bg-[#FAFCFB] focus-within:border-[#245C4A] focus-within:ring-2 focus-within:ring-[#245C4A]/10">
-                                        <span class="flex items-center border-r border-[#E5EEEA] bg-[#F3F7F5] px-3 text-xs text-[#70867D]">
-                                            itinda.app/store/
+                                    <div class="flex overflow-hidden rounded-xl border border-[#D7E3DC] bg-[#F3F7F5]">
+                                        <span class="flex items-center border-r border-[#E5EEEA] bg-[#EAEFEC] px-3 text-xs text-[#70867D] shrink-0">
+                                            {{ storeDomain ? storeDomain.replace(storeForm.store_slug, '') : 'your-domain/' }}
                                         </span>
                                         <input
                                             v-model="storeForm.store_slug"
                                             type="text"
-                                            class="h-11 min-w-0 flex-1 bg-transparent px-4 text-sm text-[#1E4138] outline-none"
+                                            readonly
+                                            title="Store slug is set at provisioning and cannot be changed here."
+                                            class="h-11 min-w-0 flex-1 bg-transparent px-4 text-sm text-[#70867D] outline-none cursor-not-allowed select-all"
                                         />
                                     </div>
+                                    <p class="mt-1 text-xs text-[#8A9C95]">Slug is fixed after store creation.</p>
                                 </label>
 
                                 <label class="block md:col-span-2">
