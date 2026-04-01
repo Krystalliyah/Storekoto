@@ -30,6 +30,7 @@ use App\Http\Controllers\Vendor\InventoryController;
 use App\Http\Controllers\Vendor\OrderController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ReportsController;
+use App\Http\Controllers\Vendor\ProductReviewController;
 
 use App\Models\Product;
 
@@ -196,6 +197,17 @@ Route::middleware([
         Route::get('/analytics', App\Http\Controllers\Vendor\AnalyticsController::class)
             ->name('analytics')
             ->middleware('permission:view-analytics');
+        
+        // =========================================================================
+        // PRODUCT REVIEWS MANAGEMENT
+        // =========================================================================
+        Route::middleware('permission:manage-products')->prefix('products/{product}/reviews')->name('products.reviews.')->group(function() {
+            Route::get('/', [ProductReviewController::class, 'index'])->name('index');
+            Route::post('/{review}/approve', [ProductReviewController::class, 'approve'])->name('approve');
+            Route::delete('/{review}', [ProductReviewController::class, 'destroy'])->name('destroy');
+            Route::post('/{review}/feature', [ProductReviewController::class, 'feature'])->name('feature');
+            Route::post('/{review}/respond', [ProductReviewController::class, 'respond'])->name('respond');
+        });
     });
 
     // Category management routes

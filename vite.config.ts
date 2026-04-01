@@ -8,7 +8,6 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/js/app.ts'],
-            // ssr: 'resources/js/ssr.ts',
             refresh: true,
         }),
         tailwindcss(),
@@ -24,4 +23,14 @@ export default defineConfig({
             },
         }),
     ],
+    server: {
+        hmr: {
+            host: 'localhost',
+        },
+    },
+    resolve: {
+        alias: {
+            '@': '/resources/js',
+        },
+    },
 });

@@ -2,6 +2,7 @@
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import VendorLayout from '@/layouts/VendorLayout.vue';
+import { Star } from 'lucide-vue-next';
 
 type Product = {
   id: number;
@@ -14,6 +15,8 @@ type Product = {
   image_url?: string | null;
   is_active: boolean;
   created_at: string;
+  total_reviews?: number;
+  average_rating?: number;
 };
 
 type Category = {
@@ -434,6 +437,20 @@ function deleteProduct(id: number) {
                   </span>
                 </div>
 
+                <div class="mt-2 flex items-center gap-2">
+                  <div class="flex items-center gap-0.5">
+                    <Star v-for="i in 5" :key="i" 
+                      :class="i <= (product.average_rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
+                      class="w-3 h-3" />
+                  </div>
+                  <Link
+                    :href="`/vendor/products/${product.id}/reviews`"
+                    class="text-xs text-emerald-600 hover:text-emerald-800"
+                  >
+                    {{ product.total_reviews || 0 }} reviews
+                  </Link>
+                </div>
+
                 <p class="text-xs text-muted-foreground mt-2">
                   Barcode: <span class="font-semibold text-foreground">{{ product.barcode || '—' }}</span>
                 </p>
@@ -487,12 +504,15 @@ function deleteProduct(id: number) {
                     Barcode
                   </th>
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
+                    Reviews
+                  </th>
+                  <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
                     Status
                   </th>
                   <th class="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
                     Actions
                   </th>
-                </tr>
+                 </tr>
               </thead>
 
               <tbody>
@@ -533,6 +553,22 @@ function deleteProduct(id: number) {
 
                   <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600">
                     {{ product.barcode || '—' }}
+                  </td>
+
+                  <td class="px-5 py-4 whitespace-nowrap">
+                    <div class="flex items-center gap-2">
+                      <div class="flex items-center gap-0.5">
+                        <Star v-for="i in 5" :key="i" 
+                          :class="i <= (product.average_rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
+                          class="w-3 h-3" />
+                      </div>
+                      <Link
+                        :href="`/vendor/products/${product.id}/reviews`"
+                        class="text-xs text-emerald-600 hover:text-emerald-800"
+                      >
+                        {{ product.total_reviews || 0 }} reviews
+                      </Link>
+                    </div>
                   </td>
 
                   <td class="px-5 py-4 whitespace-nowrap">

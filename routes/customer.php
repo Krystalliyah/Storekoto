@@ -28,6 +28,12 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
         Route::get('/products-data', [ProductController::class, 'index']);
         Route::get('/products-data/{storeId}/{productId}', [ProductController::class, 'show']);
         Route::get('/products-data/store/{id}', [ProductController::class, 'storeProducts']);
+
+        // Product Review Routes
+        Route::get('/products/{storeId}/{productId}/reviews', [App\Http\Controllers\Api\ProductReviewController::class, 'index']);
+        Route::get('/products/{storeId}/{productId}/reviews/stats', [App\Http\Controllers\Api\ProductReviewController::class, 'stats']);
+        Route::post('/products/{storeId}/{productId}/reviews', [App\Http\Controllers\Api\ProductReviewController::class, 'store'])->middleware('auth');
+        Route::post('/reviews/{reviewId}/helpful', [App\Http\Controllers\Api\ProductReviewController::class, 'helpful'])->middleware('auth');
         
         // Categories API Route
         Route::get('/categories', [CategoryController::class, 'index']);
@@ -38,6 +44,7 @@ Route::middleware(['auth', 'verified', 'role:customer'])->prefix('customer')->na
         Route::post('/cart/preorder', [CartController::class, 'preorder']);
         Route::delete('/cart/bulk', [CartController::class, 'destroyMany']);
         Route::delete('/cart', [CartController::class, 'clear']);
+        Route::delete('/cart/remove-all', [CartController::class, 'removeAll']);
         Route::put('/cart/{cart}', [CartController::class, 'update']);
         Route::delete('/cart/{cart}', [CartController::class, 'destroy']);
 

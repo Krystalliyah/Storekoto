@@ -1,16 +1,29 @@
 <script setup lang="ts">
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, usePage, Link } from '@inertiajs/vue3';
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import CustomerNav from '@/components/navigation/CustomerNav.vue';
 import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue';
 import { useSidebar } from '@/composables/useSidebar';
-import { Link } from '@inertiajs/vue3';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ShoppingCart, Store, Star, Package } from 'lucide-vue-next';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { 
+  ChevronLeft, 
+  ShoppingCart, 
+  Store, 
+  Star, 
+  StarHalf,
+  StarOff,
+  Package, 
+  ThumbsUp,
+  CheckCircle,
+  Image as ImageIcon,
+  X,
+  Loader2
+} from 'lucide-vue-next';
 
 const props = defineProps<{
   storeId: string;
@@ -27,6 +40,48 @@ const product = ref<any>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
+
+// Helper function to safely get rating distribution
+const getRatingDistribution = (star: number) => {
+  const key = star as 1 | 2 | 3 | 4 | 5;
+  return reviewStats.value.rating_distribution?.[key] || 0;
+};
+
+// Helper function to safely get rating percentage
+const getRatingPercentage = (star: number) => {
+  const key = star as 1 | 2 | 3 | 4 | 5;
+  return reviewStats.value.rating_percentages?.[key] || 0;
+};
+
+// Reviews state
+const reviews = ref<any[]>([]);
+const reviewStats = ref({
+  average_rating: 0,
+  total_reviews: 0,
+  rating_distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+  rating_percentages: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+});
+const loadingReviews = ref(false);
+const reviewFilter = ref<number | null>(null);
+const reviewSort = ref('newest');
+const reviewPage = ref(1);
+const hasMoreReviews = ref(false);
+
+// Review form
+const showReviewModal = ref(false);
+const submittingReview = ref(false);
+const reviewForm = ref({
+  rating: 0,
+  title: '',
+  comment: '',
+  images: [] as File[]
+});
+const imagePreviews = ref<string[]>([]);
+
+// Helpfulness voting
+const votingReview = ref<number | null>(null);
+
+// Quantity
 const quantity = ref(1);
 
 const maxQty = computed(() =>
@@ -43,6 +98,7 @@ const setQty = (val: number) => {
   quantity.value = Math.min(Math.max(1, val), maxQty.value === Infinity ? val : maxQty.value);
 };
 
+// Fetch product
 const fetchProduct = async () => {
   try {
     loading.value = true;
@@ -63,7 +119,190 @@ const fetchProduct = async () => {
   }
 };
 
-onMounted(fetchProduct);
+// Fetch reviews
+const fetchReviews = async (append = false) => {
+  try {
+    loadingReviews.value = true;
+    
+    const params = new URLSearchParams({
+      page: reviewPage.value.toString(),
+      per_page: '10',
+      sort: reviewSort.value,
+    });
+    
+    if (reviewFilter.value) {
+      params.append('rating', reviewFilter.value.toString());
+    }
+    
+    const response = await fetch(`/customer/products/${props.storeId}/${props.productId}/reviews?${params}`);
+    const data = await response.json();
+    
+    console.log('Fetched reviews:', data); // Debug log
+    
+    if (data.success && data.data) {
+      if (append) {
+        reviews.value = [...reviews.value, ...data.data.data];
+      } else {
+        reviews.value = data.data.data;
+      }
+      hasMoreReviews.value = data.data.next_page_url !== null;
+    }
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+  } finally {
+    loadingReviews.value = false;
+  }
+};
+
+// Fetch review stats
+const fetchReviewStats = async () => {
+  try {
+    const response = await fetch(`/customer/products/${props.storeId}/${props.productId}/reviews/stats`);
+    const data = await response.json();
+    reviewStats.value = data.data;
+  } catch (error) {
+    console.error('Error fetching review stats:', error);
+  }
+};
+
+// Load more reviews
+const loadMoreReviews = () => {
+  if (hasMoreReviews.value && !loadingReviews.value) {
+    reviewPage.value++;
+    fetchReviews(true);
+  }
+};
+
+// Handle rating click in form
+const setRating = (rating: number) => {
+  reviewForm.value.rating = rating;
+};
+
+// Handle image upload
+const handleImageUpload = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (input.files) {
+    const files = Array.from(input.files);
+    reviewForm.value.images = [...reviewForm.value.images, ...files];
+    
+    // Create previews
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        imagePreviews.value.push(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+};
+
+// Remove image
+const removeImage = (index: number) => {
+  reviewForm.value.images.splice(index, 1);
+  imagePreviews.value.splice(index, 1);
+};
+
+// Open image in new tab
+const openImage = (url: string) => {
+  window.open(url, '_blank');
+};
+
+// Submit review
+const submitReview = async () => {
+  if (reviewForm.value.rating === 0) {
+    showToast('Please select a rating', 'error');
+    return;
+  }
+  
+  if (!reviewForm.value.comment.trim()) {
+    showToast('Please write a review comment', 'error');
+    return;
+  }
+  
+  submittingReview.value = true;
+  
+  const formData = new FormData();
+  formData.append('rating', reviewForm.value.rating.toString());
+  formData.append('title', reviewForm.value.title);
+  formData.append('comment', reviewForm.value.comment);
+  
+  reviewForm.value.images.forEach((image, index) => {
+    formData.append(`images[${index}]`, image);
+  });
+  
+  try {
+    const response = await fetch(`/customer/products/${props.storeId}/${props.productId}/reviews`, {
+      method: 'POST',
+      headers: {
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+      },
+      body: formData,
+    });
+    
+    const data = await response.json();
+    
+    console.log('Review submission response:', data); // Debug log
+    
+    if (response.ok && data.success) {
+      showToast('Review submitted successfully!', 'success');
+      showReviewModal.value = false;
+      resetReviewForm();
+      // Refresh reviews and stats
+      reviewPage.value = 1;
+      fetchReviews();
+      fetchReviewStats();
+    } else {
+      // Show the specific error message from the server
+      const errorMessage = data.message || 'Failed to submit review';
+      showToast(errorMessage, 'error');
+    }
+  } catch (error) {
+    console.error('Error submitting review:', error);
+    showToast('Network error. Please try again.', 'error');
+  } finally {
+    submittingReview.value = false;
+  }
+};
+
+// Mark review as helpful
+const markHelpful = async (reviewId: number) => {
+  votingReview.value = reviewId;
+  
+  try {
+    const response = await fetch(`/customer/reviews/${reviewId}/helpful`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+      },
+      body: JSON.stringify({ helpful: true }),
+    });
+    
+    if (response.ok) {
+      // Update local review count
+      const review = reviews.value.find(r => r.id === reviewId);
+      if (review) {
+        review.helpful_count++;
+      }
+      showToast('Thanks for your feedback!', 'success');
+    }
+  } catch (error) {
+    console.error('Error marking helpful:', error);
+  } finally {
+    votingReview.value = null;
+  }
+};
+
+// Reset review form
+const resetReviewForm = () => {
+  reviewForm.value = {
+    rating: 0,
+    title: '',
+    comment: '',
+    images: []
+  };
+  imagePreviews.value = [];
+};
 
 // Toast
 const toast = ref<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -74,6 +313,7 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
   toastTimer = setTimeout(() => { toast.value = null; }, 3000);
 };
 
+// Add to cart
 const addingToCart = ref(false);
 const addToCart = async () => {
   if (!product.value) return;
@@ -102,6 +342,27 @@ const addToCart = async () => {
     addingToCart.value = false;
   }
 };
+
+// Format date
+const formatDate = (date: string | null) => {
+  if (!date) return '—';
+  return new Date(date).toLocaleDateString('en-PH', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+// Check if user is logged in
+const isLoggedIn = computed(() => {
+  return usePage().props.auth.user !== null;
+});
+
+onMounted(() => {
+  fetchProduct();
+  fetchReviews();
+  fetchReviewStats();
+});
 </script>
 
 <template>
@@ -171,10 +432,15 @@ const addToCart = async () => {
 
             <!-- Rating + Sold -->
             <div class="flex items-center gap-4 text-sm text-muted-foreground">
-              <span class="flex items-center gap-1">
-                <Star class="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                {{ product.rating }}
-              </span>
+              <div class="flex items-center gap-1">
+                <div class="flex">
+                  <Star v-for="i in 5" :key="i" 
+                    :class="i <= Math.round(reviewStats.average_rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
+                    class="w-4 h-4" />
+                </div>
+                <span>{{ reviewStats.average_rating }}</span>
+                <span>({{ reviewStats.total_reviews }} reviews)</span>
+              </div>
               <span class="flex items-center gap-1">
                 <Package class="w-4 h-4" />
                 {{ product.sold_count }} sold
@@ -183,7 +449,7 @@ const addToCart = async () => {
 
             <!-- Price -->
             <div class="text-3xl font-bold text-[#245c4a]">
-              ${{ product.unit_price.toFixed(2) }}
+              ₱{{ product.unit_price.toFixed(2) }}
             </div>
 
             <!-- Stock status -->
@@ -250,6 +516,161 @@ const addToCart = async () => {
           </div>
         </div>
 
+        <!-- Reviews Section -->
+        <div v-if="product" class="mt-8 pt-8 border-t border-border">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-foreground">Customer Reviews</h2>
+            <Button 
+              @click="showReviewModal = true"
+              :disabled="!isLoggedIn"
+              class="bg-[#245c4a] hover:bg-[#1B4D3E] text-white"
+            >
+              Write a Review
+            </Button>
+          </div>
+          
+          <!-- Rating Summary Bar -->
+          <div class="bg-white rounded-xl border border-border shadow-sm p-4 mb-4">
+    <div class="flex flex-col md:flex-row gap-6">
+      <div class="text-center md:text-left">
+        <div class="text-4xl font-bold text-foreground">{{ reviewStats.average_rating }}</div>
+        <div class="flex justify-center md:justify-start mt-1">
+          <Star v-for="i in 5" :key="i" 
+            :class="i <= Math.round(reviewStats.average_rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
+            class="w-4 h-4" />
+        </div>
+        <div class="text-sm text-muted-foreground mt-1">{{ reviewStats.total_reviews }} reviews</div>
+      </div>
+      
+      <div class="flex-1 space-y-2">
+        <div v-for="star in [5,4,3,2,1]" :key="star" class="flex items-center gap-2">
+          <span class="text-sm w-8">{{ star }}★</span>
+          <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              class="h-full bg-yellow-400 rounded-full"
+              :style="{ width: `${getRatingPercentage(star)}%` }"
+            ></div>
+          </div>
+          <span class="text-xs text-muted-foreground w-12">
+            {{ getRatingDistribution(star) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+          
+          <!-- Review Filters -->
+          <div class="flex flex-wrap gap-3 mb-4">
+            <button
+              @click="reviewFilter = null; reviewPage = 1; fetchReviews()"
+              :class="reviewFilter === null ? 'bg-[#245c4a] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+              class="px-3 py-1.5 text-sm rounded-lg transition-colors"
+            >
+              All
+            </button>
+            <button
+              v-for="star in [5,4,3,2,1]"
+              :key="star"
+              @click="reviewFilter = star; reviewPage = 1; fetchReviews()"
+              :class="reviewFilter === star ? 'bg-[#245c4a] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+              class="px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1"
+            >
+              {{ star }} <Star class="w-3 h-3" />
+            </button>
+            
+            <select v-model="reviewSort" @change="reviewPage = 1; fetchReviews()" class="ml-auto px-3 py-1.5 text-sm rounded-lg border border-gray-200">
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="highest">Highest Rating</option>
+              <option value="lowest">Lowest Rating</option>
+              <option value="helpful">Most Helpful</option>
+            </select>
+          </div>
+          
+          <!-- Reviews List -->
+          <div class="space-y-4">
+            <div v-if="loadingReviews && reviews.length === 0" class="text-center py-8">
+              <Loader2 class="w-8 h-8 animate-spin text-[#245c4a] mx-auto" />
+              <p class="text-muted-foreground mt-2">Loading reviews...</p>
+            </div>
+            
+            <div v-else-if="reviews.length === 0" class="bg-white rounded-xl border border-border shadow-sm p-8 text-center">
+              <p class="text-muted-foreground">No reviews yet. Be the first to review this product!</p>
+            </div>
+            
+            <div v-for="review in reviews" :key="review.id" class="bg-white rounded-xl border border-border shadow-sm p-4">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <span class="text-emerald-700 font-semibold">
+                      {{ review.user?.name?.charAt(0).toUpperCase() || '?' }}
+                    </span>
+                  </div>
+                  <div>
+                    <p class="font-medium">{{ review.user?.name || 'Anonymous' }}</p>
+                    <div class="flex items-center gap-1 mt-1">
+                      <Star v-for="i in 5" :key="i" 
+                        :class="i <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
+                        class="w-4 h-4" />
+                      <span class="text-xs text-muted-foreground ml-2">{{ formatDate(review.created_at) }}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <span v-if="review.is_verified_purchase" 
+                  class="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  <CheckCircle class="w-3 h-3" />
+                  Verified Purchase
+                </span>
+              </div>
+              
+              <h4 class="font-semibold mt-3">{{ review.title || 'Customer Review' }}</h4>
+              <p class="text-sm text-muted-foreground mt-2">{{ review.comment }}</p>
+              
+              <!-- Review Images -->
+              <div v-if="review.images && review.images.length" class="flex gap-2 mt-3">
+                <div v-for="(img, idx) in review.images" :key="idx" 
+                  class="w-16 h-16 rounded-lg overflow-hidden border border-border cursor-pointer"
+                  @click="openImage(img)">
+                  <img :src="img" class="w-full h-full object-cover" />
+                </div>
+              </div>
+              
+              <!-- Helpful Button -->
+              <div class="flex items-center gap-4 mt-3 pt-3 border-t border-border">
+                <button 
+                  @click="markHelpful(review.id)"
+                  :disabled="votingReview === review.id"
+                  class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-emerald-600 transition-colors"
+                >
+                  <ThumbsUp class="w-3 h-3" />
+                  <span>{{ review.helpful_count }} found this helpful</span>
+                </button>
+              </div>
+              
+              <!-- Admin Response -->
+              <div v-if="review.admin_response" class="mt-3 p-3 bg-gray-50 rounded-lg border-l-4 border-emerald-500">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-xs font-semibold text-emerald-600">Store Response</span>
+                  <span class="text-xs text-muted-foreground">{{ formatDate(review.admin_response_at) }}</span>
+                </div>
+                <p class="text-sm">{{ review.admin_response }}</p>
+              </div>
+            </div>
+            
+            <!-- Load More Button -->
+            <div v-if="hasMoreReviews" class="text-center pt-4">
+              <Button 
+                @click="loadMoreReviews" 
+                :disabled="loadingReviews"
+                variant="outline"
+              >
+                {{ loadingReviews ? 'Loading...' : 'Load More Reviews' }}
+              </Button>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Floating cart button -->
@@ -260,6 +681,97 @@ const addToCart = async () => {
       </Link>
     </main>
   </div>
+
+  <!-- Write Review Modal -->
+  <Teleport to="body">
+    <Dialog v-model:open="showReviewModal">
+      <DialogContent class="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Write a Review</DialogTitle>
+          <DialogDescription>
+            Share your experience with this product
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div class="space-y-4 py-4">
+          <!-- Rating Stars -->
+          <div>
+            <label class="block text-sm font-medium mb-2">Your Rating *</label>
+            <div class="flex gap-1">
+              <button
+                v-for="i in 5"
+                :key="i"
+                @click="setRating(i)"
+                class="focus:outline-none"
+              >
+                <Star 
+                  :class="i <= reviewForm.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
+                  class="w-8 h-8 hover:scale-110 transition-transform"
+                />
+              </button>
+            </div>
+          </div>
+          
+          <!-- Review Title -->
+          <div>
+            <label class="block text-sm font-medium mb-2">Review Title (Optional)</label>
+            <Input 
+              v-model="reviewForm.title" 
+              placeholder="Summarize your experience"
+            />
+          </div>
+          
+          <!-- Review Comment -->
+          <div>
+            <label class="block text-sm font-medium mb-2">Your Review *</label>
+            <textarea 
+              v-model="reviewForm.comment" 
+              placeholder="What did you like or dislike about this product?"
+              rows="4"
+              class="w-full px-3 py-2 rounded-xl border border-border resize-none"
+            ></textarea>
+          </div>
+          
+          <!-- Image Upload -->
+          <div>
+            <label class="block text-sm font-medium mb-2">Add Photos (Optional)</label>
+            <div class="flex items-center gap-2">
+              <label class="cursor-pointer">
+                <div class="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-emerald-500 transition-colors">
+                  <ImageIcon class="w-6 h-6 text-gray-400" />
+                  <span class="text-xs text-gray-400 mt-1">Add</span>
+                </div>
+                <input type="file" accept="image/*" multiple class="hidden" @change="handleImageUpload" />
+              </label>
+              
+              <!-- Image Previews -->
+              <div v-for="(preview, idx) in imagePreviews" :key="idx" class="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                <img :src="preview" class="w-full h-full object-cover" />
+                <button 
+                  @click="removeImage(idx)"
+                  class="absolute top-0 right-0 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                >
+                  <X class="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+            <p class="text-xs text-muted-foreground mt-2">Upload up to 5 images (JPG, PNG, max 2MB each)</p>
+          </div>
+        </div>
+        
+        <div class="flex justify-end gap-2">
+          <Button variant="outline" @click="showReviewModal = false">Cancel</Button>
+          <Button 
+            @click="submitReview" 
+            :disabled="submittingReview"
+            class="bg-[#245c4a] hover:bg-[#1B4D3E] text-white"
+          >
+            {{ submittingReview ? 'Submitting...' : 'Submit Review' }}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </Teleport>
 
   <!-- Toast -->
   <Teleport to="body">

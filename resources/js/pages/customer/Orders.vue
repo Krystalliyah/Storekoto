@@ -87,7 +87,7 @@ const tabs = [
 ]
 const activeTab = ref<OrderStatus>('pending')
 
-/** Search (dropdown inside input) */
+/** Search */
 type SearchBy = 'order_number' | 'store_name' | 'product_name'
 const search = ref('')
 const searchBy = ref<SearchBy>('order_number')
@@ -112,10 +112,69 @@ const toggleExpanded = (orderId: number) => {
   expanded.value = next
 }
 
-/** Mock data (replace later with Inertia props) */
+/** Orders data */
 const orders = ref<Order[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+// ========== REAL-TIME UPDATES ==========
+let echoChannel: any = null
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
+// Toast notification function
+const showNotification = (message: string) => {
+  const toast = document.createElement('div')
+  toast.className = 'fixed bottom-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse'
+  toast.textContent = message
+  document.body.appendChild(toast)
+  setTimeout(() => toast.remove(), 3000)
+}
+
+// Update order status in the list
+const updateOrderStatus = (orderId: number, newStatus: OrderStatus, updatedAt?: string) => {
+  const index = orders.value.findIndex(o => o.id === orderId)
+  if (index !== -1) {
+    const oldStatus = orders.value[index].status
+    orders.value[index].status = newStatus
+    if (updatedAt) {
+      orders.value[index].updated_at = updatedAt
+    }
+    
+    // Trigger re-render
+    orders.value = [...orders.value]
+    
+    // Show notification if status changed
+    if (oldStatus !== newStatus) {
+      const statusLabels: Record<OrderStatus, string> = {
+        pending: 'Pending',
+        preparing: 'Preparing',
+        ready_for_pickup: 'Ready for Pickup',
+        picked_up: 'Picked Up',
+        cancelled: 'Cancelled',
+      }
+      showNotification(`Order #${orders.value[index].order_number} is now ${statusLabels[newStatus]}`)
+    }
+  }
+}
+
+// Setup real-time listener
+const setupRealtimeListener = () => {
+  // Get current user ID from meta tag
+  const userElement = document.querySelector('meta[name="user-id"]')
+  const userId = userElement?.getAttribute('content')
+  
+  if (userId && window.Echo) {
+    echoChannel = window.Echo.private(`customer.orders.${userId}`)
+    
+    echoChannel.listen('.order.status.updated', (event: any) => {
+      console.log('Real-time order update received:', event)
+      updateOrderStatus(event.id, event.status, event.updated_at)
+    })
+  } else {
+    console.log('Echo not available or no user ID found')
+  }
+}
+// ========== END REAL-TIME UPDATES ==========
 
 // Fetch orders from API
 const fetchOrders = async () => {
@@ -138,7 +197,6 @@ const fetchOrders = async () => {
     
     const data = await response.json()
     
-    // Map API response to component interface
     orders.value = data.data.map((order: any) => ({
       id: order.id,
       customer_id: order.customer_id,
@@ -209,11 +267,36 @@ const filteredOrders = computed(() => {
   return list
 })
 
-/** Small helpers */
+/** Cancel order */
+const cancelOrder = async (orderId: number) => {
+  const order = orders.value.find((o) => o.id === orderId)
+  if (!order || order.status !== 'pending') return
+  if (!window.confirm('Cancel this order?')) return
+
+  try {
+    const response = await fetch(`/customer/orders/${orderId}/cancel`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '',
+      },
+    })
+    if (!response.ok) {
+      const body = await response.json()
+      alert(body.message ?? 'Failed to cancel order.')
+      return
+    }
+    await fetchOrders()
+  } catch {
+    alert('Failed to cancel order. Please try again.')
+  }
+}
+
+/** Helper functions */
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(
-    amount
-  )
+  new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount)
 
 const formatDateTime = (iso: string) =>
   new Intl.DateTimeFormat('en-PH', {
@@ -257,45 +340,31 @@ const statusClasses = (s: OrderStatus) => {
   }
 }
 
-/** Cancel order — hits the real API and syncs to tenant */
-const cancelOrder = async (orderId: number) => {
-  const order = orders.value.find((o) => o.id === orderId)
-  if (!order || order.status !== 'pending') return
-  if (!window.confirm('Cancel this order?')) return
-
-  try {
-    const response = await fetch(`/customer/orders/${orderId}/cancel`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '',
-      },
-    })
-    if (!response.ok) {
-      const body = await response.json()
-      alert(body.message ?? 'Failed to cancel order.')
-      return
-    }
-    // Refresh the list so status is accurate
-    await fetchOrders()
-  } catch {
-    alert('Failed to cancel order. Please try again.')
-  }
-}
-
-// Poll every 10 s so vendor status changes appear without a manual refresh
-let pollTimer: ReturnType<typeof setInterval> | null = null
-
+// ========== LIFECYCLE HOOKS ==========
 onMounted(() => {
   fetchOrders()
-  pollTimer = setInterval(fetchOrders, 10000)
+  
+  // Setup WebSocket connection after a short delay
+  setTimeout(() => {
+    setupRealtimeListener()
+  }, 500)
+  
+  // Fallback polling every 30 seconds
+  pollTimer = setInterval(fetchOrders, 30000)
 })
 
 onUnmounted(() => {
+  if (echoChannel) {
+    echoChannel.stopListening('.order.status.updated')
+    const userElement = document.querySelector('meta[name="user-id"]')
+    const userId = userElement?.getAttribute('content')
+    if (userId && window.Echo) {
+      window.Echo.leave(`customer.orders.${userId}`)
+    }
+  }
   if (pollTimer) clearInterval(pollTimer)
 })
+// ========== END LIFECYCLE ==========
 </script>
 
 <template>
@@ -306,6 +375,9 @@ onUnmounted(() => {
 
     <Sidebar role="customer">
       <CustomerNav />
+      <template #icons>
+        <CustomerNavIcons />
+      </template>
     </Sidebar>
 
     <main :class="contentClass">
@@ -315,6 +387,9 @@ onUnmounted(() => {
           <h1 class="text-2xl font-semibold text-[#245c4a]">My Orders</h1>
           <p class="text-muted-foreground">
             View your order history, track order status, and manage your pre-orders.
+          </p>
+          <p class="text-xs text-emerald-600 mt-1">
+            ⚡ Status updates appear in real-time when the store updates your order.
           </p>
         </div>
 
@@ -349,9 +424,8 @@ onUnmounted(() => {
           </Link>
         </div>
 
-        <!-- Search + Sort (no filter for now) -->
+        <!-- Search + Sort -->
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <!-- Search (matches your pattern) -->
           <div class="flex w-full max-w-1xl gap-3">
             <DropdownMenu>
               <div class="relative w-full max-w-3xl cursor-pointer">
@@ -385,7 +459,6 @@ onUnmounted(() => {
             </DropdownMenu>
           </div>
 
-          <!-- Sort -->
           <div class="flex items-center gap-2">
             <span class="text-sm text-muted-foreground">Sort:</span>
             <DropdownMenu>
@@ -558,7 +631,6 @@ onUnmounted(() => {
                   </div>
 
                   <div class="flex items-center gap-2">
-                    <!-- Pending-only cancel -->
                     <Button
                       v-if="activeTab === 'pending' && order.status === 'pending'"
                       variant="destructive"

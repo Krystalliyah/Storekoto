@@ -6,21 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\InventoryMovement;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class InventoryController extends Controller
 {
     public function index()
     {
         $products = Product::with('category')->get()->map(function ($p) {
-            $category = \Illuminate\Support\Facades\DB::connection('mysql')
-                ->table('categories')
-                ->where('id', $p->category_id)
-                ->first();
-
             return [
                 'id'           => $p->id,
                 'product_name' => $p->name,
-                'category'     => $category?->name ?? 'Uncategorized',
+                'category'     => $p->category?->name ?? 'Uncategorized',
                 'barcode'      => $p->barcode ?? $p->sku ?? '—',
                 'stock_level'  => $p->stock,
                 'unit_price'   => (float) $p->price,
