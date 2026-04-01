@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -18,6 +19,8 @@ class ProductController extends Controller
             ->paginate(15)
             ->through(function ($product) {
                 $category = \Illuminate\Support\Facades\DB::connection('mysql')
+                // Fetch category name from central database
+                $category = DB::connection('mysql')
                     ->table('categories')
                     ->where('id', $product->category_id)
                     ->first();
@@ -39,23 +42,64 @@ class ProductController extends Controller
             });
 
         $categories = \Illuminate\Support\Facades\DB::connection('mysql')
+        
+        // Fetch ALL categories from central database (including subcategories)
+        $allCategories = DB::connection('mysql')
             ->table('categories')
-            ->whereNull('parent_id')
+            ->orderBy('parent_id')
             ->orderBy('name')
             ->get()
             ->map(function ($cat) {
                 return [
                     'id' => $cat->id,
                     'category_name' => $cat->name,
+                    'slug' => $cat->slug ?? '',
+                    'description' => $cat->description ?? null,
+                    'color' => $cat->color ?? '#000000',
+                    'parent_id' => $cat->parent_id,
+                    'children' => [], // Will be populated later
                 ];
             });
 
+            })
+            ->toArray();
+        
+        // Build the category tree
+        $categories = $this->buildCategoryTree($allCategories);
+        
         return inertia('vendor/Products', [
             'products'       => $products,
             'categories'     => $categories,
             'totalProducts'  => $totalProducts,
             'activeProducts' => $activeProducts,
         ]);
+    }
+
+    /**
+     * Build a nested category tree from flat categories
+     */
+    private function buildCategoryTree(array $categories): array
+    {
+        $categoryMap = [];
+        $tree = [];
+        
+        // First, create a map of all categories by ID
+        foreach ($categories as $category) {
+            $categoryMap[$category['id']] = $category;
+        }
+        
+        // Then, build the tree structure
+        foreach ($categoryMap as $id => &$category) {
+            if ($category['parent_id'] !== null && isset($categoryMap[$category['parent_id']])) {
+                // This is a child category, add it to its parent's children array
+                $categoryMap[$category['parent_id']]['children'][] = &$category;
+            } else {
+                // This is a root category (no parent)
+                $tree[] = &$category;
+            }
+        }
+        
+        return $tree;
     }
 
     public function store(Request $request)
@@ -131,6 +175,11 @@ class ProductController extends Controller
             }
 
             $validated['image_path'] = $path;
+            // Delete old image if exists
+            if ($product->image_path) {
+                \Storage::disk('public')->delete($product->image_path);
+            }
+            $validated['image_path'] = $request->file('image')->store('products', 'public');
         }
 
         $product->update($validated);
@@ -140,6 +189,11 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        // Delete product image if exists
+        if ($product->image_path) {
+            \Storage::disk('public')->delete($product->image_path);
+        }
+        
         $product->delete();
 
         return back()->with('success', 'Product deleted successfully!');
