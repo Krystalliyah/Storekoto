@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -76,9 +77,7 @@ class ProductController extends Controller
                     'description' => $product->description ?? '',
                     'category_id' => $product->category_id,
                     'category_name' => $product->category?->name ?? null,
-                    'image_url' => $product->image_path 
-                        ? asset('storage/' . $product->image_path) 
-                        : null,
+                    $this->getProductImageUrl($product),
                     'unit_price' => (float) $product->price,
                     'stock_level' => $product->stock ?? 0,
                     'sold_count' => 0, // TODO: Calculate from orders
@@ -235,9 +234,7 @@ class ProductController extends Controller
                     'description' => $product->description ?? '',
                     'category_id' => $product->category_id,
                     'category_name' => $product->category?->name ?? null,
-                    'image_url' => $product->image_path 
-                        ? asset('storage/' . $product->image_path) 
-                        : null,
+                    'image_url' => $this->getProductImageUrl($product),
                     'unit_price' => (float) $product->price,
                     'stock_level' => $product->stock ?? 0,
                     'sold_count' => 0,
