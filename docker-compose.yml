@@ -13,22 +13,16 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./initdb.d:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - app-network
 
-  # ADD MINIO SERVICE HERE
   minio:
     image: quay.io/minio/minio:latest
     restart: unless-stopped
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"  # S3 API port
-      - "9001:9001"  # MinIO Console UI port
+      - "9005:9000"
+      - "9006:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin123
@@ -37,7 +31,6 @@ services:
     networks:
       - app-network
 
-  # Optional: Auto-create bucket
   create-buckets:
     image: minio/mc
     depends_on:
@@ -55,7 +48,7 @@ services:
 
 volumes:
   db_data:
-  minio_data:  # ADD THIS VOLUME
+  minio_data:
 
 networks:
   app-network:

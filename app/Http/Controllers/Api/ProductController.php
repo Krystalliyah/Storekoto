@@ -10,6 +10,27 @@ use Illuminate\Support\Facades\Storage;
 class ProductController extends Controller
 {
     /**
+     * Helper method to get product image URL from S3 or local storage
+     * 
+     * @param \App\Models\Product $product
+     * @return string|null
+     */
+    private function getProductImageUrl($product)
+    {
+        if (!$product->image_path) {
+            return null;
+        }
+
+        // Check if we're using S3
+        if (config('filesystems.default') === 's3') {
+            return Storage::disk('s3')->url($product->image_path);
+        }
+
+        // Fallback to local storage
+        return asset('storage/' . $product->image_path);
+    }
+
+    /**
      * Get all products from all stores with search, filter, and sort
      */
     public function index(Request $request)
@@ -77,7 +98,7 @@ class ProductController extends Controller
                     'description' => $product->description ?? '',
                     'category_id' => $product->category_id,
                     'category_name' => $product->category?->name ?? null,
-                    $this->getProductImageUrl($product),
+                    'image_url' => $this->getProductImageUrl($product),
                     'unit_price' => (float) $product->price,
                     'stock_level' => $product->stock ?? 0,
                     'sold_count' => 0, // TODO: Calculate from orders
@@ -144,9 +165,7 @@ class ProductController extends Controller
                 'sku'           => $product->sku ?? null,
                 'category_id'   => $product->category_id,
                 'category_name' => $product->category?->name ?? null,
-                'image_url'     => $product->image_path
-                    ? asset('storage/' . $product->image_path)
-                    : null,
+                'image_url'     => $this->getProductImageUrl($product),
                 'unit_price'    => (float) $product->price,
                 'stock_level'   => $product->stock ?? 0,
                 'sold_count'    => 0,
