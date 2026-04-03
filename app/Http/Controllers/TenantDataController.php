@@ -1,29 +1,25 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\Product;
-use App\Models\ProductReview;
-use App\Models\OrderItem;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
-class ProductReviewController extends Controller
+class TenantDataController extends Controller
 {
     /**
      * Switch to tenant database context
      */
-    private function switchToTenant($storeId)
+    private function switchToTenant($tenantId)
     {
-        $tenant = Tenant::find($storeId);
+        $tenant = Tenant::find($tenantId);
         if (!$tenant) {
-            throw new \Exception("Store not found: {$storeId}");
+            throw new \Exception("Store not found: {$tenantId}");
         }
         
-        // Initialize tenancy if not already initialized
+        // Initialize tenancy for this tenant
         if (!tenancy()->initialized) {
             tenancy()->initialize($tenant);
         }
@@ -32,30 +28,49 @@ class ProductReviewController extends Controller
     }
     
     /**
-     * Get product reviews from tenant database
+     * Get product details from tenant database
      */
-    public function index(Request $request, $storeId, $productId)
+    public function getProduct($tenantId, $productId)
     {
         try {
-            Log::info('Fetching reviews', ['storeId' => $storeId, 'productId' => $productId]);
+            $this->switchToTenant($tenantId);
             
-            $this->switchToTenant($storeId);
+            $product = \App\Models\Product::with(['store', 'category'])
+                ->findOrFail($productId);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $product
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error("Failed to fetch product: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load product'
+            ], 500);
+        } finally {
+            if (tenancy()->initialized) {
+                tenancy()->end();
+            }
+        }
+    }
+    
+    /**
+     * Get product reviews from tenant database
+     */
+    public function getProductReviews(Request $request, $tenantId, $productId)
+    {
+        try {
+            $this->switchToTenant($tenantId);
             
             $perPage = $request->get('per_page', 10);
             $rating = $request->get('rating');
             $sort = $request->get('sort', 'newest');
-            $user = auth()->user();
             
-            $query = ProductReview::where('product_id', $productId)
-                ->with('user');
-            
-            // Show approved reviews OR the current user's own reviews (even if not approved)
-            $query->where(function($q) use ($user) {
-                $q->where('is_approved', true);
-                if ($user) {
-                    $q->orWhere('user_id', $user->id);
-                }
-            });
+            $query = \App\Models\ProductReview::where('product_id', $productId)
+                ->with('user')
+                ->where('is_approved', true);
             
             if ($rating) {
                 $query->where('rating', $rating);
@@ -87,9 +102,6 @@ class ProductReviewController extends Controller
             $reviews->getCollection()->transform(function ($review) {
                 $centralUser = \App\Models\User::find($review->user_id);
                 $review->user_name = $centralUser ? $centralUser->name : 'Anonymous';
-                if ($review->user) {
-                    $review->user->name = $centralUser ? $centralUser->name : 'Anonymous';
-                }
                 return $review;
             });
             
@@ -99,7 +111,7 @@ class ProductReviewController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            Log::error('Failed to fetch reviews: ' . $e->getMessage());
+            Log::error("Failed to fetch reviews: {$e->getMessage()}");
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to load reviews'
@@ -114,18 +126,12 @@ class ProductReviewController extends Controller
     /**
      * Get review statistics from tenant database
      */
-    public function stats($storeId, $productId)
+    public function getReviewStats($tenantId, $productId)
     {
         try {
-            Log::info('Fetching review stats', ['storeId' => $storeId, 'productId' => $productId]);
+            $this->switchToTenant($tenantId);
             
-            $this->switchToTenant($storeId);
-            
-            $product = Product::find($productId);
-            
-            if (!$product) {
-                return response()->json(['error' => 'Product not found'], 404);
-            }
+            $product = \App\Models\Product::findOrFail($productId);
             
             $distribution = $product->rating_distribution ?? [1=>0,2=>0,3=>0,4=>0,5=>0];
             $total = $product->total_reviews ?? 0;
@@ -147,7 +153,7 @@ class ProductReviewController extends Controller
             ]);
             
         } catch (\Exception $e) {
-            Log::error('Failed to fetch review stats: ' . $e->getMessage());
+            Log::error("Failed to fetch review stats: {$e->getMessage()}");
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to load review stats'
@@ -162,21 +168,18 @@ class ProductReviewController extends Controller
     /**
      * Submit a review to tenant database
      */
-    public function store(Request $request, $storeId, $productId)
+    public function submitReview(Request $request, $tenantId, $productId)
     {
         try {
-            Log::info('Submitting review', ['storeId' => $storeId, 'productId' => $productId]);
-            
-            $validated = $request->validate([
+            $request->validate([
                 'rating' => 'required|integer|min:1|max:5',
                 'title' => 'nullable|string|max:255',
                 'comment' => 'required|string|min:3|max:5000',
                 'images' => 'nullable|array|max:5',
-                'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
+                'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048'
             ]);
             
             $user = auth()->user();
-            
             if (!$user) {
                 return response()->json([
                     'success' => false,
@@ -184,10 +187,10 @@ class ProductReviewController extends Controller
                 ], 401);
             }
             
-            $this->switchToTenant($storeId);
+            $this->switchToTenant($tenantId);
             
             // Check if user already reviewed this product
-            $existingReview = ProductReview::where('product_id', $productId)
+            $existingReview = \App\Models\ProductReview::where('product_id', $productId)
                 ->where('user_id', $user->id)
                 ->first();
             
@@ -199,28 +202,28 @@ class ProductReviewController extends Controller
             }
             
             // Check if user has purchased this product
-            $hasPurchased = OrderItem::where('product_id', $productId)
+            $hasPurchased = \App\Models\OrderItem::where('product_id', $productId)
                 ->whereHas('order', function($q) use ($user) {
                     $q->where('user_id', $user->id)
                       ->where('status', 'completed');
                 })
                 ->exists();
             
-            // Handle image uploads - store in tenant-specific directory
+            // Handle image uploads
             $imagePaths = [];
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
-                    $path = $image->store("tenant-{$storeId}/product-reviews", 'public');
+                    $path = $image->store("tenant-{$tenantId}/product-reviews", 'public');
                     $imagePaths[] = Storage::url($path);
                 }
             }
             
-            $review = ProductReview::create([
+            $review = \App\Models\ProductReview::create([
                 'product_id' => $productId,
                 'user_id' => $user->id,
-                'rating' => $validated['rating'],
-                'title' => $validated['title'] ?? null,
-                'comment' => $validated['comment'],
+                'rating' => $request->rating,
+                'title' => $request->title,
+                'comment' => $request->comment,
                 'images' => !empty($imagePaths) ? $imagePaths : null,
                 'is_verified_purchase' => $hasPurchased,
                 'is_approved' => true, // Set to false if you want manual approval
@@ -228,16 +231,9 @@ class ProductReviewController extends Controller
             ]);
             
             // Update product rating stats
-            $product = Product::find($productId);
+            $product = \App\Models\Product::find($productId);
             if ($product && method_exists($product, 'updateRatingStats')) {
                 $product->updateRatingStats();
-            }
-            
-            // Load user data for response
-            $review->load('user');
-            $centralUser = \App\Models\User::find($user->id);
-            if ($review->user) {
-                $review->user->name = $centralUser ? $centralUser->name : 'Anonymous';
             }
             
             return response()->json([
@@ -246,24 +242,12 @@ class ProductReviewController extends Controller
                 'data' => $review
             ]);
             
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors(),
-            ], 422);
         } catch (\Exception $e) {
-            Log::error('Review submission error: ' . $e->getMessage(), [
-                'store_id' => $storeId,
-                'product_id' => $productId,
-                'user_id' => auth()->id(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
+            Log::error("Failed to submit review: {$e->getMessage()}");
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+                'message' => $e->getMessage()
+            ], 500);
         } finally {
             if (tenancy()->initialized) {
                 tenancy()->end();
@@ -274,50 +258,49 @@ class ProductReviewController extends Controller
     /**
      * Mark a review as helpful
      */
-    public function helpful(Request $request, $storeId, $reviewId)
-{
-    try {
-        $user = auth()->user();
-        
-        if (!$user) {
-            return response()->json(['success' => false, 'message' => 'Please login'], 401);
-        }
-        
-        $this->switchToTenant($storeId);
-        
-        $review = ProductReview::findOrFail($reviewId);
-        
-        $existingVote = \App\Models\ReviewHelpfulnessVote::where('review_id', $reviewId)
-            ->where('user_id', $user->id)
-            ->first();
-        
-        if ($existingVote) {
-            return response()->json(['success' => false, 'message' => 'You already voted on this review'], 422);
-        }
-        
-        \App\Models\ReviewHelpfulnessVote::create([
-            'review_id' => $reviewId,
-            'user_id' => $user->id,
-        ]);
-        
-        $review->increment('helpful_count');
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Thank you for your feedback!',
-            'helpful_count' => $review->fresh()->helpful_count,
-        ]);
-        
-    } catch (\Exception $e) {
-        Log::error('Failed to mark helpful: ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to register vote'
-        ], 500);
-    } finally {
-        if (tenancy()->initialized) {
-            tenancy()->end();
+    public function markHelpful(Request $request, $tenantId, $reviewId)
+    {
+        try {
+            $user = auth()->user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Please login'], 401);
+            }
+            
+            $this->switchToTenant($tenantId);
+            
+            $review = \App\Models\ProductReview::findOrFail($reviewId);
+            
+            $existingVote = \App\Models\ReviewHelpfulnessVote::where('review_id', $reviewId)
+                ->where('user_id', $user->id)
+                ->first();
+            
+            if ($existingVote) {
+                return response()->json(['success' => false, 'message' => 'You already voted on this review'], 422);
+            }
+            
+            \App\Models\ReviewHelpfulnessVote::create([
+                'review_id' => $reviewId,
+                'user_id' => $user->id,
+            ]);
+            
+            $review->increment('helpful_count');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Thank you for your feedback!',
+                'helpful_count' => $review->fresh()->helpful_count,
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error("Failed to mark helpful: {$e->getMessage()}");
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to register vote'
+            ], 500);
+        } finally {
+            if (tenancy()->initialized) {
+                tenancy()->end();
+            }
         }
     }
-}
 }

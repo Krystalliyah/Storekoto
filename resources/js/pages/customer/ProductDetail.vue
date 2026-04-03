@@ -265,11 +265,13 @@ const submitReview = async () => {
 };
 
 // Mark review as helpful
+// Update the markHelpful function to include storeId
 const markHelpful = async (reviewId: number) => {
   votingReview.value = reviewId;
   
   try {
-    const response = await fetch(`/customer/reviews/${reviewId}/helpful`, {
+    // Add storeId to the URL
+    const response = await fetch(`/customer/reviews/${props.storeId}/${reviewId}/helpful`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -278,16 +280,21 @@ const markHelpful = async (reviewId: number) => {
       body: JSON.stringify({ helpful: true }),
     });
     
-    if (response.ok) {
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
       // Update local review count
       const review = reviews.value.find(r => r.id === reviewId);
       if (review) {
         review.helpful_count++;
       }
       showToast('Thanks for your feedback!', 'success');
+    } else {
+      showToast(data.message || 'Failed to register vote', 'error');
     }
   } catch (error) {
     console.error('Error marking helpful:', error);
+    showToast('Network error. Please try again.', 'error');
   } finally {
     votingReview.value = null;
   }
