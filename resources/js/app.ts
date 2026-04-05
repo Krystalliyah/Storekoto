@@ -7,6 +7,12 @@ import 'vue-sonner/style.css'
 import FlashToasts from '@/components/FlashToasts.vue'
 import '../css/app.css';
 import { applyThemeForCurrentRoute, initializeTheme } from './composables/useAppearance';
+import './bootstrap';
+import { configureEcho } from '@laravel/echo-vue';
+
+configureEcho({
+    broadcaster: 'reverb',
+});
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

@@ -3,13 +3,24 @@
 namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerOrder;
 use App\Models\Order;
+use App\Events\OrderStatusUpdated;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
 class OrderController extends Controller
 {
     private const VALID_STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'];
+
+    private const STATUS_MAP = [
+        'pending'   => 'pending',
+        'confirmed' => 'pending',
+        'preparing' => 'preparing',
+        'ready'     => 'ready_for_pickup',
+        'completed' => 'picked_up',
+        'cancelled' => 'cancelled',
+    ];
 
     public function index()
     {
@@ -40,6 +51,11 @@ class OrderController extends Controller
         }
 
         $order->update(['status' => $next]);
+        $this->syncCustomerOrder($order);
+        
+        // Dispatch real-time event
+        event(new OrderStatusUpdated($order));
+
         return back()->with('success', "Order marked as {$next}.");
     }
 
@@ -50,7 +66,23 @@ class OrderController extends Controller
         }
 
         $order->update(['status' => 'cancelled']);
+        $this->syncCustomerOrder($order);
+        
+        // Dispatch real-time event
+        event(new OrderStatusUpdated($order));
+
         return back()->with('success', 'Order cancelled.');
+    }
+
+    private function syncCustomerOrder(Order $order): void
+    {
+        $tenantId       = tenant('id');
+        $customerStatus = self::STATUS_MAP[$order->status] ?? $order->status;
+
+        CustomerOrder::on('central')
+            ->where('tenant_id', $tenantId)
+            ->where('order_id', $order->id)
+            ->update(['status' => $customerStatus]);
     }
 
     private function nextStatus(string $current): ?string
@@ -66,7 +98,7 @@ class OrderController extends Controller
             'order_number'  => $order->order_number,
             'status'        => $order->status,
             'total_amount'  => (float) $order->total,
-            'is_paid'       => $order->status === 'completed', // extend schema if payment tracking needed
+            'is_paid'       => $order->status === 'completed',
             'placed_at'     => $order->placed_at?->toISOString(),
             'created_at'    => $order->created_at?->toISOString(),
             'items'         => $order->items->map(fn($i) => [

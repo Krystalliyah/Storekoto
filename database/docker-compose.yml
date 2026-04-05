@@ -21,21 +21,41 @@ services:
     networks:
       - app-network
 
-  # phpmyadmin:
-  #  image: phpmyadmin/phpmyadmin:latest
-  #  restart: unless-stopped
-  #  ports:
-  #    - "8080:80"
-  #  environment:
-  #    PMA_HOST: db
-  #    PMA_PORT: 3306
-  #  depends_on:
-  #    - db
-  #  networks:
-  #    - app-network
+  # ADD MINIO SERVICE HERE
+  minio:
+    image: quay.io/minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"  # S3 API port
+      - "9001:9001"  # MinIO Console UI port
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    volumes:
+      - minio_data:/data
+    networks:
+      - app-network
+
+  # Optional: Auto-create bucket
+  create-buckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set local http://minio:9000 minioadmin minioadmin123;
+      /usr/bin/mc mb local/itinda-products;
+      /usr/bin/mc anonymous set download local/itinda-products;
+      exit 0;
+      "
+    networks:
+      - app-network
 
 volumes:
   db_data:
+  minio_data:  # ADD THIS VOLUME
 
 networks:
   app-network:

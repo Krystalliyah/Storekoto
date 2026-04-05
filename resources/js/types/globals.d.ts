@@ -1,4 +1,7 @@
 import type { AppPageProps } from './index';
+import type { Router } from '@inertiajs/core';
+import type { Page } from '@inertiajs/core';
+import type { createHeadManager } from '@inertiajs/vue3';
 
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {
@@ -27,3 +30,14 @@ declare module 'vue' {
         $headManager: ReturnType<typeof createHeadManager>;
     }
 }
+
+// Add Echo and Pusher to the global window object
+declare global {
+    interface Window {
+        Echo: any;
+        Pusher: any;
+        axios: any;
+    }
+}
+
+export {};

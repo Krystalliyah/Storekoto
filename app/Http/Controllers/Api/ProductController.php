@@ -5,9 +5,31 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
+    /**
+     * Helper method to get product image URL from S3 or local storage
+     * 
+     * @param \App\Models\Product $product
+     * @return string|null
+     */
+    private function getProductImageUrl($product)
+    {
+        if (!$product->image_path) {
+            return null;
+        }
+
+        // Check if we're using S3
+        if (config('filesystems.default') === 's3') {
+            return Storage::disk('s3')->url($product->image_path);
+        }
+
+        // Fallback to local storage
+        return asset('storage/' . $product->image_path);
+    }
+
     /**
      * Get all products from all stores with search, filter, and sort
      */
@@ -20,7 +42,7 @@ class ProductController extends Controller
             'min_price' => 'nullable|numeric|min:0',
             'max_price' => 'nullable|numeric|min:0',
             'in_stock' => 'nullable|boolean',
-            'store_id' => 'nullable|integer',
+            'store_id' => 'nullable|string',
         ]);
 
         $stores = Tenant::query()
@@ -38,14 +60,13 @@ class ProductController extends Controller
             $storeProducts = $store->run(function () use ($validated) {
                 $query = \App\Models\Product::query()
                     ->where('is_active', true)
-                    ->with('category');
+                    ->with('category'); // Eager load category
 
                 // Search filter
                 if (!empty($validated['search'])) {
                     $query->where(function ($q) use ($validated) {
                         $q->where('name', 'like', '%' . $validated['search'] . '%')
-                          ->orWhere('description', 'like', '%' . $validated['search'] . '%')
-                          ->orWhere('sku', 'like', '%' . $validated['search'] . '%');
+                          ->orWhere('description', 'like', '%' . $validated['search'] . '%');
                     });
                 }
 
@@ -76,20 +97,19 @@ class ProductController extends Controller
                     'product_name' => $product->name,
                     'description' => $product->description ?? '',
                     'category_id' => $product->category_id,
-                    'category_name' => $product->category->name ?? null,
-                    'image_url' => $product->image_path 
-                        ? asset('storage/' . $product->image_path) 
-                        : 'https://picsum.photos/400?random=' . $product->id,
+                    'category_name' => $product->category?->name ?? null,
+                    'image_url' => $this->getProductImageUrl($product),
                     'unit_price' => (float) $product->price,
                     'stock_level' => $product->stock ?? 0,
                     'sold_count' => 0, // TODO: Calculate from orders
-                    'rating' => 4.5, // TODO: Calculate from reviews
+                    'rating' => $product->average_rating ?? 0,
+                    'total_reviews' => $product->total_reviews ?? 0,
                     'is_available' => $product->stock > 0,
                     'is_active' => $product->is_active,
                     'store' => [
                         'id' => $store->id,
                         'name' => $store->name,
-                        'logo' => $store->logo ?? 'https://ui-avatars.com/api/?name=' . urlencode($store->name),
+                        'logo' => $store->logo ?? null,
                     ],
                 ];
             }
@@ -114,6 +134,7 @@ class ProductController extends Controller
         });
 
         return response()->json([
+            'success' => true,
             'data' => $allProducts,
             'meta' => [
                 'total' => count($allProducts),
@@ -123,14 +144,53 @@ class ProductController extends Controller
     }
 
     /**
-     * Get products for a specific store with filters
+     * Get a single product from a specific store
+     */
+    public function show($storeId, $productId)
+    {
+        $store = Tenant::query()
+            ->where('is_approved', 1)
+            ->findOrFail($storeId);
+
+        $product = $store->run(function () use ($productId) {
+            return \App\Models\Product::with('category')->findOrFail($productId);
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id'            => $product->id,
+                'product_name'  => $product->name,
+                'description'   => $product->description ?? '',
+                'sku'           => $product->sku ?? null,
+                'category_id'   => $product->category_id,
+                'category_name' => $product->category?->name ?? null,
+                'image_url'     => $this->getProductImageUrl($product),
+                'unit_price'    => (float) $product->price,
+                'stock_level'   => $product->stock ?? 0,
+                'sold_count'    => 0,
+                'rating'        => $product->average_rating ?? 0,
+                'total_reviews' => $product->total_reviews ?? 0,
+                'is_available'  => $product->stock > 0,
+                'is_active'     => $product->is_active,
+                'store' => [
+                    'id'   => $store->id,
+                    'name' => $store->name,
+                    'logo' => $store->logo ?? null,
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Get products for a specific store
      */
     public function storeProducts(Request $request, $storeId)
     {
         $validated = $request->validate([
             'search' => 'nullable|string|max:255',
             'category_id' => 'nullable|integer',
-            'sort_by' => 'nullable|in:name,price_low,price_high,rating,sold',
+            'sort_by' => 'nullable|in:name,price_low,price_high',
             'min_price' => 'nullable|numeric|min:0',
             'max_price' => 'nullable|numeric|min:0',
             'in_stock' => 'nullable|boolean',
@@ -149,8 +209,7 @@ class ProductController extends Controller
             if (!empty($validated['search'])) {
                 $query->where(function ($q) use ($validated) {
                     $q->where('name', 'like', '%' . $validated['search'] . '%')
-                      ->orWhere('description', 'like', '%' . $validated['search'] . '%')
-                      ->orWhere('sku', 'like', '%' . $validated['search'] . '%');
+                      ->orWhere('description', 'like', '%' . $validated['search'] . '%');
                 });
             }
 
@@ -193,14 +252,12 @@ class ProductController extends Controller
                     'product_name' => $product->name,
                     'description' => $product->description ?? '',
                     'category_id' => $product->category_id,
-                    'category_name' => $product->category->name ?? null,
-                    'image_url' => $product->image_path 
-                        ? asset('storage/' . $product->image_path) 
-                        : 'https://picsum.photos/400?random=' . $product->id,
+                    'category_name' => $product->category?->name ?? null,
+                    'image_url' => $this->getProductImageUrl($product),
                     'unit_price' => (float) $product->price,
                     'stock_level' => $product->stock ?? 0,
                     'sold_count' => 0,
-                    'rating' => 4.5,
+                    'rating' => $product->average_rating ?? 0,
                     'is_available' => $product->stock > 0,
                     'is_active' => $product->is_active,
                 ];
@@ -208,6 +265,7 @@ class ProductController extends Controller
         });
 
         return response()->json([
+            'success' => true,
             'data' => $products,
             'meta' => [
                 'total' => $products->count(),

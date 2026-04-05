@@ -2,6 +2,7 @@
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import VendorLayout from '@/layouts/VendorLayout.vue';
+import { Star } from 'lucide-vue-next';
 
 type Product = {
   id: number;
@@ -14,11 +15,23 @@ type Product = {
   image_url?: string | null;
   is_active: boolean;
   created_at: string;
+  total_reviews?: number;
+  average_rating?: number;
 };
 
-type CategoryOption = {
+type Category = {
   id: number;
   category_name: string;
+  slug: string;
+  description: string | null;
+  color: string;
+  parent_id: number | null;
+  children?: Category[];
+};
+
+// Extended category type for display with level
+type CategoryWithLevel = Category & {
+  level?: number;
 };
 
 type PaginationLink = {
@@ -33,29 +46,103 @@ const props = defineProps<{
     links?: PaginationLink[];
     meta?: any;
   };
-  categories: CategoryOption[];
+  categories: Category[];
   totalProducts: number;
   activeProducts: number;
 }>();
+
+// DEBUG: Log categories to see what's being received from the backend
+console.log('=== DEBUG: Categories received from backend ===');
+console.log('Raw categories:', props.categories);
+console.log('Categories count:', props.categories.length);
+console.log('First category sample:', props.categories[0]);
 
 const showModal = ref(false);
 const editingProduct = ref<Product | null>(null);
 const search = ref('');
 const imagePreview = ref<string | null>(null);
+const imageInputKey = ref(0);
+let previewObjectUrl: string | null = null;
 const categoryOpen = ref(false);
 const categoryBtnEl = ref<HTMLElement | null>(null);
 const categoryDropdownStyle = ref<Record<string, string>>({});
 
+// Helper function to build category tree from flat list
+function buildCategoryTree(flatCategories: Category[]): Category[] {
+  const categoryMap = new Map<number, Category>();
+  const roots: Category[] = [];
+
+  // First pass: create map of all categories
+  flatCategories.forEach(category => {
+    categoryMap.set(category.id, { ...category, children: [] });
+  });
+
+  // Second pass: build tree structure
+  flatCategories.forEach(category => {
+    const node = categoryMap.get(category.id)!;
+    if (category.parent_id && categoryMap.has(category.parent_id)) {
+      const parent = categoryMap.get(category.parent_id)!;
+      if (!parent.children) parent.children = [];
+      parent.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+
+  console.log('=== Built category tree ===');
+  console.log('Root categories:', roots);
+  
+  return roots;
+}
+
+const categoriesTree = computed(() => {
+  // Check if categories already have children structure
+  if (props.categories.length > 0 && props.categories[0].children !== undefined) {
+    console.log('Categories already have nested structure');
+    return props.categories;
+  }
+  // Otherwise, build tree from flat list
+  console.log('Building tree from flat categories');
+  return buildCategoryTree(props.categories);
+});
+
+// Flatten categories for display and lookup with level tracking
+const flattenedCategories = computed(() => {
+  const flat: CategoryWithLevel[] = [];
+  
+  function flatten(categories: Category[], level: number = 0) {
+    categories.forEach(category => {
+      flat.push({ ...category, level });
+      if (category.children && category.children.length) {
+        flatten(category.children, level + 1);
+      }
+    });
+  }
+  
+  flatten(categoriesTree.value);
+  
+  console.log('=== Flattened categories for dropdown ===');
+  console.log('All categories with levels:', flat.map(c => ({ 
+    id: c.id, 
+    name: c.category_name, 
+    level: c.level,
+    parent_id: c.parent_id 
+  })));
+  
+  return flat;
+});
+
 const selectedCategoryLabel = computed(() => {
   if (!form.category_id) return null;
-  return categories.value.find((c) => c.id === form.category_id)?.category_name ?? null;
+  const category = flattenedCategories.value.find((c) => c.id === form.category_id);
+  return category?.category_name ?? null;
 });
 
 function openCategoryDropdown() {
   if (categoryBtnEl.value) {
     const rect = categoryBtnEl.value.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
-    const dropdownH = Math.min(220, categories.value.length * 36 + 8);
+    const dropdownH = Math.min(220, flattenedCategories.value.length * 36 + 8);
     const showAbove = spaceBelow < dropdownH + 8;
     categoryDropdownStyle.value = {
       position: 'fixed',
@@ -72,6 +159,7 @@ function openCategoryDropdown() {
 function selectCategory(id: number) {
   form.category_id = id;
   categoryOpen.value = false;
+  console.log('Selected category ID:', id);
 }
 
 const form = useForm<{
@@ -97,7 +185,7 @@ const form = useForm<{
 
 const products = computed(() => props.products.data || []);
 const paginationLinks = computed(() => props.products.links || []);
-const categories = computed(() => props.categories || []);
+const categories = computed(() => props.categories);
 
 const filteredProducts = computed(() => {
   const q = search.value.trim().toLowerCase();
@@ -125,12 +213,21 @@ function productStatusBadge(isActive: boolean) {
       };
 }
 
+function revokePreview() {
+  if (previewObjectUrl) {
+    URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = null;
+  }
+}
+
 function openCreateModal() {
   editingProduct.value = null;
   form.reset();
   form.clearErrors();
   form.is_active = true;
+  revokePreview();
   imagePreview.value = null;
+  imageInputKey.value++;
   showModal.value = true;
 }
 
@@ -140,13 +237,15 @@ function openEditModal(product: Product) {
   form.product_name = product.product_name;
   form.description = product.description || '';
   form.category_id =
-    categories.value.find((c) => c.category_name === product.category_name)?.id ?? '';
+    flattenedCategories.value.find((c) => c.category_name === product.category_name)?.id ?? '';
   form.barcode = product.barcode || '';
   form.price = product.price != null ? String(product.price) : '';
   form.stock = product.stock != null ? String(product.stock) : '0';
   form.image = null;
   form.is_active = product.is_active;
+  revokePreview();
   imagePreview.value = product.image_url || null;
+  imageInputKey.value++;
   showModal.value = true;
 }
 
@@ -155,6 +254,7 @@ function closeModal() {
   form.reset();
   form.clearErrors();
   editingProduct.value = null;
+  revokePreview();
   imagePreview.value = null;
 }
 
@@ -163,33 +263,46 @@ function onPickImage(e: Event) {
   const file = input.files?.[0] ?? null;
   form.image = file;
 
+  console.log('onPickImage:', { file, fileName: file?.name, fileSize: file?.size });
+
+  revokePreview();
   if (file) {
-    imagePreview.value = URL.createObjectURL(file);
+    previewObjectUrl = URL.createObjectURL(file);
+    imagePreview.value = previewObjectUrl;
   } else {
     imagePreview.value = editingProduct.value?.image_url || null;
   }
 }
 
 function submit() {
-  if (editingProduct.value) {
-    form.transform((data) => ({
-      ...data,
-      _method: 'put' as const,
-      is_active: data.is_active ? 1 : 0,
-    }));
+  console.log('submit:', {
+    editing: !!editingProduct.value,
+    image: form.image,
+    imageName: form.image?.name,
+    imageSize: form.image?.size,
+    data: {
+      product_name: form.product_name,
+      description: form.description,
+      category_id: form.category_id,
+      barcode: form.barcode,
+      price: form.price,
+      stock: form.stock,
+      is_active: form.is_active,
+    },
+  });
 
-    form.post(`/vendor/products/${editingProduct.value.id}`, {
+  if (editingProduct.value) {
+    form.put(`/vendor/products/${editingProduct.value.id}`, {
       forceFormData: true,
+      preserveState: true,
+      onError: (errors) => console.log('upload errors', errors),
       onSuccess: () => closeModal(),
     });
   } else {
-    form.transform((data) => {
-      const { _method, ...rest } = data as any;
-      return { ...rest, is_active: rest.is_active ? 1 : 0 };
-    });
-
     form.post('/vendor/products', {
       forceFormData: true,
+      preserveState: true,
+      onError: (errors) => console.log('upload errors', errors),
       onSuccess: () => closeModal(),
     });
   }
@@ -207,6 +320,7 @@ function deleteProduct(id: number) {
 
   <VendorLayout>
     <div class="p-4 sm:p-6 flex flex-col gap-4">
+      <!-- Header -->
       <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
         <div>
           <p class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:#245c4a">
@@ -227,6 +341,7 @@ function deleteProduct(id: number) {
         </button>
       </div>
 
+      <!-- Stats -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="bg-white rounded-xl border border-border shadow-sm p-4">
           <p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -262,9 +377,11 @@ function deleteProduct(id: number) {
           <p class="text-xs text-muted-foreground bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
             Showing <span class="font-semibold">{{ filteredProducts.length }}</span> of
             <span class="font-semibold">{{ totalProducts }}</span>
-          </p>        </div>
+          </p>
+        </div>
       </div>
 
+      <!-- No Products State -->
       <div
         v-if="filteredProducts.length === 0"
         class="bg-white rounded-xl border border-border shadow-sm p-10 text-center"
@@ -290,6 +407,7 @@ function deleteProduct(id: number) {
       </div>
 
       <template v-else>
+        <!-- Mobile view -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:hidden">
           <div
             v-for="product in filteredProducts"
@@ -330,6 +448,20 @@ function deleteProduct(id: number) {
                   </span>
                 </div>
 
+                <div class="mt-2 flex items-center gap-2">
+                  <div class="flex items-center gap-0.5">
+                    <Star v-for="i in 5" :key="i" 
+                      :class="i <= (product.average_rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
+                      class="w-3 h-3" />
+                  </div>
+                  <Link
+                    :href="`/vendor/products/${product.id}/reviews`"
+                    class="text-xs text-emerald-600 hover:text-emerald-800"
+                  >
+                    {{ product.total_reviews || 0 }} reviews
+                  </Link>
+                </div>
+
                 <p class="text-xs text-muted-foreground mt-2">
                   Barcode: <span class="font-semibold text-foreground">{{ product.barcode || '—' }}</span>
                 </p>
@@ -355,6 +487,7 @@ function deleteProduct(id: number) {
           </div>
         </div>
 
+        <!-- Desktop table view -->
         <div class="hidden lg:block bg-white rounded-xl border border-border shadow-sm overflow-hidden">
           <div class="px-5 py-4 border-b border-border flex items-start justify-between">
             <div>
@@ -382,12 +515,15 @@ function deleteProduct(id: number) {
                     Barcode
                   </th>
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
+                    Reviews
+                  </th>
+                  <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
                     Status
                   </th>
                   <th class="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
                     Actions
                   </th>
-                </tr>
+                 </tr>
               </thead>
 
               <tbody>
@@ -431,6 +567,22 @@ function deleteProduct(id: number) {
                   </td>
 
                   <td class="px-5 py-4 whitespace-nowrap">
+                    <div class="flex items-center gap-2">
+                      <div class="flex items-center gap-0.5">
+                        <Star v-for="i in 5" :key="i" 
+                          :class="i <= (product.average_rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
+                          class="w-3 h-3" />
+                      </div>
+                      <Link
+                        :href="`/vendor/products/${product.id}/reviews`"
+                        class="text-xs text-emerald-600 hover:text-emerald-800"
+                      >
+                        {{ product.total_reviews || 0 }} reviews
+                      </Link>
+                    </div>
+                  </td>
+
+                  <td class="px-5 py-4 whitespace-nowrap">
                     <span
                       class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full"
                       :class="productStatusBadge(product.is_active).cls"
@@ -445,8 +597,6 @@ function deleteProduct(id: number) {
                         @click="openEditModal(product)"
                         class="text-xs font-semibold px-2 py-1 rounded transition-colors"
                         style="color:#245c4a"
-                        @mouseover="($event.currentTarget as HTMLElement).style.background = 'rgba(36,92,74,.10)'"
-                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'"
                       >
                         Edit
                       </button>
@@ -454,8 +604,6 @@ function deleteProduct(id: number) {
                         @click="deleteProduct(product.id)"
                         class="text-xs font-semibold px-2 py-1 rounded transition-colors"
                         style="color:#9f1239"
-                        @mouseover="($event.currentTarget as HTMLElement).style.background = '#fff1f2'"
-                        @mouseout="($event.currentTarget as HTMLElement).style.background = 'transparent'"
                       >
                         Delete
                       </button>
@@ -466,6 +614,7 @@ function deleteProduct(id: number) {
             </table>
           </div>
 
+          <!-- Pagination -->
           <div
             v-if="paginationLinks.length"
             class="px-5 py-4 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
@@ -496,6 +645,7 @@ function deleteProduct(id: number) {
           </div>
         </div>
 
+        <!-- Mobile pagination -->
         <div
           v-if="paginationLinks.length"
           class="lg:hidden bg-white rounded-xl border border-border shadow-sm p-4"
@@ -525,15 +675,15 @@ function deleteProduct(id: number) {
         </div>
       </template>
 
-      <!-- ===================== MODAL ===================== -->
+      <!-- MODAL -->
       <Teleport to="body">
         <div v-if="showModal" class="fixed inset-0 z-50 flex items-start justify-center px-4 sm:px-6 pt-12 sm:pt-16 pb-6 overflow-y-auto">
           <!-- Backdrop -->
           <div class="absolute inset-0 bg-black/50" @click="closeModal" />
 
-          <!-- Modal panel: flex column so header/footer stay fixed, body scrolls -->
+          <!-- Modal panel -->
           <div
-            class="relative w-full max-w-[calc(100vw-2rem)] sm:max-w-lg mx-auto bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]"
+            class="relative w-full max-w-[calc(100vw-2rem)] sm:max-w-lg mx-auto bg-card rounded-2xl shadow-2xl flex flex-col max-h-[90vh] border border-border"
           >
             <!-- Header -->
             <div class="px-5 py-4 border-b border-border flex items-start justify-between flex-shrink-0">
@@ -551,8 +701,7 @@ function deleteProduct(id: number) {
               <button
                 type="button"
                 @click="closeModal"
-                class="ml-4 flex-shrink-0 w-7 h-7 rounded-xl flex items-center justify-center transition-colors hover:bg-[#F3F7F5]"
-                style="color:#245C4A"
+                class="ml-4 flex-shrink-0 w-7 h-7 rounded-xl flex items-center justify-center transition-colors hover:bg-accent text-foreground"
               >
                 ✕
               </button>
@@ -561,12 +710,10 @@ function deleteProduct(id: number) {
             <!-- Scrollable body -->
             <div class="overflow-y-auto flex-1 px-5 py-5">
               <form id="product-form" @submit.prevent="submit" class="flex flex-col gap-4">
-
                 <!-- Thumbnail -->
-                <div class="flex items-start gap-4 p-3 rounded-lg" style="background:hsl(0 0% 97%);">
+                <div class="flex items-start gap-4 p-3 rounded-lg bg-muted">
                   <div
-                    class="w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0"
-                    style="background:hsl(0 0% 92%); border:1px solid hsl(0 0% 88%)"
+                    class="w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 bg-secondary border border-border"
                   >
                     <img v-if="imagePreview" :src="imagePreview" class="w-full h-full object-cover" alt="" />
                     <span v-else class="text-xl">🖼️</span>
@@ -578,9 +725,11 @@ function deleteProduct(id: number) {
                     </label>
                     <input
                       type="file"
+                      name="image"
                       accept="image/*"
+                      :key="imageInputKey"
                       @change="onPickImage"
-                      class="block w-full text-xs text-slate-600 file:mr-3 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-white file:text-slate-700 file:border file:border-border hover:file:bg-gray-50"
+                      class="block w-full text-xs text-foreground file:mr-3 file:py-1 file:px-3 file:rounded-xl file:border file:border-border file:text-xs file:font-semibold file:bg-secondary file:text-foreground hover:file:bg-accent"
                     />
                     <p class="text-xs text-muted-foreground mt-1">JPG/PNG recommended (max 2MB).</p>
                     <p v-if="form.errors.image" class="text-xs mt-1" style="color:#9f1239">
@@ -598,8 +747,8 @@ function deleteProduct(id: number) {
                     v-model="form.product_name"
                     required
                     placeholder="e.g. Chocolate Bar"
-                    class="w-full px-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm"
-                    style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                    class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 text-sm"
+                    style="--tw-ring-color: rgba(36,92,74,.35);"
                   />
                   <p v-if="form.errors.product_name" class="text-xs mt-1" style="color:#9f1239">
                     {{ form.errors.product_name }}
@@ -607,21 +756,21 @@ function deleteProduct(id: number) {
                 </div>
 
                 <!-- Category + Barcode row -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">                  <div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
                     <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                       Category <span style="color:#9f1239">*</span>
                     </label>
-                    <!-- Custom dropdown — uses fixed positioning so it escapes overflow:auto -->
                     <div class="relative">
                       <button
                         type="button"
                         ref="categoryBtnEl"
                         @click="openCategoryDropdown"
-                        class="w-full flex items-center justify-between px-3 py-2 rounded-xl border bg-white text-sm focus:outline-none focus:ring-2 transition-colors"
+                        class="w-full flex items-center justify-between px-3 py-2 rounded-xl border bg-input text-foreground text-sm focus:outline-none focus:ring-2 transition-colors"
                         :class="form.errors.category_id ? 'border-red-300' : 'border-border'"
-                        style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                        style="--tw-ring-color: rgba(36,92,74,.35);"
                       >
-                        <span :style="selectedCategoryLabel ? 'color:#111827' : 'color:#6b7280'">
+                        <span :class="selectedCategoryLabel ? 'text-foreground' : 'text-muted-foreground'">
                           {{ selectedCategoryLabel ?? 'Select category' }}
                         </span>
                         <svg
@@ -633,37 +782,36 @@ function deleteProduct(id: number) {
                         </svg>
                       </button>
 
-                      <!-- Dropdown list — fixed so it escapes any overflow container -->
+                      <!-- Dropdown list -->
                       <Teleport to="body">
                         <div
                           v-if="categoryOpen"
-                          class="fixed z-[9999] bg-white rounded-lg border border-border shadow-lg py-1 overflow-y-auto"
+                          class="fixed z-[9999] bg-card rounded-lg border border-border shadow-lg py-1 overflow-y-auto"
                           :style="{ ...categoryDropdownStyle, maxHeight: '220px' }"
-                          ref="categoryDropdownEl"
                         >
-                          <button
-                            v-for="category in categories"
-                            :key="category.id"
-                            type="button"
-                            @click="selectCategory(category.id)"
-                            class="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-[#F9FBF9]"
-                            :class="form.category_id === category.id ? 'font-semibold' : ''"
-                            :style="form.category_id === category.id ? 'color:#245c4a' : 'color:#111827'"
-                          >
-                            <span class="flex items-center gap-2">
-                              <svg
-                                v-if="form.category_id === category.id"
-                                class="w-3.5 h-3.5 flex-shrink-0"
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"
-                                style="color:#245c4a"
-                              >
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                              <span v-else class="w-3.5 flex-shrink-0" />
-                              {{ category.category_name }}
-                            </span>
-                          </button>
-                          <p v-if="categories.length === 0" class="px-3 py-2 text-xs text-muted-foreground">
+                          <div v-for="category in flattenedCategories" :key="category.id">
+                            <button
+                              @click="selectCategory(category.id)"
+                              class="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-accent text-foreground"
+                              :style="{ paddingLeft: (category.level || 0) * 20 + 12 + 'px' }"
+                            >
+                              <span class="flex items-center gap-2">
+                                <svg
+                                  v-if="form.category_id === category.id"
+                                  class="w-3.5 h-3.5 flex-shrink-0"
+                                  fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"
+                                  style="color:#245c4a"
+                                >
+                                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span v-else class="w-3.5 flex-shrink-0" />
+                                <span :class="{ 'font-semibold': (category.level || 0) === 0 }">
+                                  {{ category.category_name }}
+                                </span>
+                              </span>
+                            </button>
+                          </div>
+                          <p v-if="flattenedCategories.length === 0" class="px-3 py-2 text-xs text-muted-foreground">
                             No categories available.
                           </p>
                         </div>
@@ -688,8 +836,8 @@ function deleteProduct(id: number) {
                     <input
                       v-model="form.barcode"
                       placeholder="e.g. 4901234567890"
-                      class="w-full px-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm"
-                      style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                      class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 text-sm"
+                      style="--tw-ring-color: rgba(36,92,74,.35);"
                     />
                     <p v-if="form.errors.barcode" class="text-xs mt-1" style="color:#9f1239">
                       {{ form.errors.barcode }}
@@ -699,7 +847,6 @@ function deleteProduct(id: number) {
 
                 <!-- Price + Stock row -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <!-- Price -->
                   <div>
                     <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                       Price <span style="color:#9f1239">*</span>
@@ -713,8 +860,8 @@ function deleteProduct(id: number) {
                         step="0.01"
                         required
                         placeholder="0.00"
-                        class="w-full pl-7 pr-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm"
-                        style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                        class="w-full pl-7 pr-3 py-2 rounded-xl border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 text-sm"
+                        style="--tw-ring-color: rgba(36,92,74,.35);"
                       />
                     </div>
                     <p v-if="form.errors.price" class="text-xs mt-1" style="color:#9f1239">
@@ -722,7 +869,6 @@ function deleteProduct(id: number) {
                     </p>
                   </div>
 
-                  <!-- Stock -->
                   <div>
                     <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                       Stock <span style="color:#9f1239">*</span>
@@ -734,8 +880,8 @@ function deleteProduct(id: number) {
                       step="1"
                       required
                       placeholder="0"
-                      class="w-full px-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm"
-                      style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                      class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 text-sm"
+                      style="--tw-ring-color: rgba(36,92,74,.35);"
                     />
                     <p v-if="form.errors.stock" class="text-xs mt-1" style="color:#9f1239">
                       {{ form.errors.stock }}
@@ -743,7 +889,7 @@ function deleteProduct(id: number) {
                   </div>
                 </div>
 
-                <!-- Description (original) -->
+                <!-- Description -->
                 <div>
                   <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
                     Description
@@ -752,8 +898,8 @@ function deleteProduct(id: number) {
                     v-model="form.description"
                     rows="3"
                     placeholder="Brief product description (optional)"
-                    class="w-full px-3 py-2 rounded-xl border border-border bg-white focus:outline-none focus:ring-2 text-sm resize-none"
-                    style="--tw-ring-color: rgba(36,92,74,.35); color: #111827;"
+                    class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 text-sm resize-none"
+                    style="--tw-ring-color: rgba(36,92,74,.35);"
                   />
                   <p v-if="form.errors.description" class="text-xs mt-1" style="color:#9f1239">
                     {{ form.errors.description }}
@@ -762,8 +908,7 @@ function deleteProduct(id: number) {
 
                 <!-- Active toggle -->
                 <div
-                  class="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border"
-                  style="background:hsl(0 0% 98.5%);"
+                  class="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border bg-muted"
                 >
                   <div>
                     <p class="text-sm font-medium text-foreground">Active product</p>
@@ -781,17 +926,15 @@ function deleteProduct(id: number) {
                     ></div>
                   </label>
                 </div>
-
               </form>
             </div>
 
-            <!-- Footer actions — always visible -->
-            <div class="px-5 py-4 border-t border-border flex items-center justify-end gap-2 flex-shrink-0 bg-white rounded-b-xl">
+            <!-- Footer actions -->
+            <div class="px-5 py-4 border-t border-border flex items-center justify-end gap-2 flex-shrink-0 bg-card rounded-b-xl">
               <button
                 type="button"
                 @click="closeModal"
-                class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl border border-border bg-white hover:bg-[#F9FBF9] transition-colors"
-                style="color: #111827;"
+                class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl border border-border bg-secondary text-foreground hover:bg-accent transition-colors"
               >
                 Cancel
               </button>

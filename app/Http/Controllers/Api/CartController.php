@@ -144,6 +144,20 @@ class CartController extends Controller
         return response()->json(['message' => 'Items removed from cart']);
     }
 
+        /**
+    * Remove all items from cart
+    */
+    public function removeAll()
+    {
+        // Delete all cart items for the authenticated user
+        Cart::where('user_id', auth()->id())->delete();
+    
+        return response()->json([
+            'message' => 'All items removed from cart',
+            'success' => true,
+        ]);
+    }
+
     public function clear()
     {
         Cart::where('user_id', auth()->id())->delete();
