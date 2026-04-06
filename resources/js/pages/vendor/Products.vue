@@ -498,11 +498,11 @@ function deleteProduct(id: number) {
             </div>
             <div class="text-xs font-semibold px-2 py-1 rounded" style="background:#f5ead4;color:#7a5800">
               {{ filteredProducts.length }} shown
-            </div>
+            </div>  
           </div>
 
           <div class="w-full overflow-x-auto">
-            <table class="min-w-[980px] w-full border-collapse">
+            <table class="min-w-[800px] w-full border-collapse">
               <thead>
                 <tr style="background:hsl(0 0% 96.1%)">
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
@@ -959,3 +959,12 @@ function deleteProduct(id: number) {
     </div>
   </VendorLayout>
 </template>
+
+<style scoped>
+@media (max-width: 1024px) {
+  .overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+</style>
