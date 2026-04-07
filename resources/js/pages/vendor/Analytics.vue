@@ -199,6 +199,18 @@ const maxHistoricalRevenue = computed(() =>
     Math.max(1, ...historicalTrends.value.map((item) => item.revenue)),
 );
 
+const isDailyView = computed(() => {
+    if (!props.activeFrom && !props.activeTo && props.activePreset) {
+        const shortPresets = ['today', 'yesterday', 'this_week', 'last_week', 'last_7'];
+        return shortPresets.includes(props.activePreset);
+    }
+    return weeklySales.value.length <= 14;
+});
+
+const chartTitle = computed(() =>
+    isDailyView.value ? 'Daily revenue trend' : 'Weekly revenue trend'
+);
+
 const formatPeso = (value: number) =>
     new Intl.NumberFormat('en-PH', {
         style: 'currency',
@@ -374,7 +386,7 @@ const formatDate = (date: string) =>
                                 </div>
                                 <div class="section-title-wrapper">
                                     <div>
-                                        <h2 class="section-title">Daily revenue trend</h2>
+                                        <h2 class="section-title">{{ chartTitle }}</h2>
                                         <p class="section-description">Compare daily sales and quickly spot your strongest business days.</p>
                                     </div>
                                     <div v-if="weeklySales.length > 7" class="scroll-indicator">

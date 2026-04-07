@@ -8,7 +8,7 @@ import CustomerNavIcons from '@/components/navigation/CustomerNavIcons.vue';
 import { useSidebar } from '@/composables/useSidebar';
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Link, router } from '@inertiajs/vue3'
+import { Link } from '@inertiajs/vue3'
 import { ArrowLeft, ChevronDown, ShoppingCart } from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
 import {
@@ -144,25 +144,20 @@ const setQty = (product: any, val: number) => {
 const increment = (product: any) => setQty(product, getQty(product) + 1)
 const decrement = (product: any) => setQty(product, getQty(product) - 1)
 
-const cartOpen = ref(false)
 const cartItems = ref<any[]>([])
+const storeCartModalOpen = ref(false)
+const selectedStoreItems = ref<number[]>([])
 
-const total = computed(() =>
-  cartItems.value
-    .filter(item => item.selected)
-    .reduce((sum, item) => sum + item.unit_price * item.quantity, 0)
+const storeCartItems = computed(() =>
+  cartItems.value.filter(item => Number(item.store_id) === Number(props.storeId))
 )
 
-const allSelected = computed({
-  get: () => cartItems.value.every(item => item.selected),
-  set: (value: boolean) => {
-    cartItems.value.forEach(item => item.selected = value)
-  }
-})
+const storeCartTotal = computed(() =>
+  storeCartItems.value.reduce((sum, item) => sum + Number(item.unit_price) * item.quantity, 0)
+)
 
-const removeSelected = () => {
-  cartItems.value = cartItems.value.filter(item => !item.selected)
-}
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(amount)
 
 const toast = ref<{ message: string; type: 'success' | 'error' } | null>(null)
 let toastTimer: ReturnType<typeof setTimeout> | null = null
@@ -195,18 +190,8 @@ const addToCart = async (product: any) => {
     quantities[product.id] = 1
     showToast(`${qty}× "${product.product_name}" added to cart!`)
     
-    const cartResponse = await fetch('/customer/cart/items', {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    })
-    if (cartResponse.ok) {
-      const cartData = await cartResponse.json()
-      cartItems.value = cartData.data || []
-    }
+    await fetchCartItems()
+    storeCartModalOpen.value = true
   } catch (err) {
     console.error(err)
     showToast('Failed to add to cart. Please try again.', 'error')
@@ -215,7 +200,7 @@ const addToCart = async (product: any) => {
 
 const fetchCartItems = async () => {
   try {
-    const response = await fetch('/customer/cart/items', {
+    const response = await fetch('/customer/cart-data', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -225,10 +210,88 @@ const fetchCartItems = async () => {
     })
     if (response.ok) {
       const data = await response.json()
-      cartItems.value = data.data || []
+      const items: any[] = []
+      data.data.forEach((storeCart: any) => {
+        storeCart.items.forEach((item: any) => {
+          items.push({
+            id: item.id,
+            store_id: Number(storeCart.store_id),
+            product_name: item.product.name,
+            unit_price: Number(item.product.price) || 0,
+            image_path: item.product.image_path,
+            quantity: item.quantity,
+          })
+        })
+      })
+      cartItems.value = items
     }
   } catch (err) {
     console.error('Error fetching cart:', err)
+  }
+}
+
+const removeCartItem = async (itemId: number) => {
+  try {
+    const response = await fetch(`/customer/cart/${itemId}`, {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '',
+      }
+    })
+    if (response.ok) {
+      cartItems.value = cartItems.value.filter(item => item.id !== itemId)
+      selectedStoreItems.value = selectedStoreItems.value.filter(id => id !== itemId)
+    }
+  } catch (err) {
+    console.error('Error removing item:', err)
+  }
+}
+
+const removeSelectedItems = async () => {
+  const ids = selectedStoreItems.value
+  if (ids.length === 0) return
+
+  try {
+    const response = await fetch('/customer/cart/bulk', {
+      method: 'DELETE',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '',
+      },
+      body: JSON.stringify({ ids })
+    })
+    if (response.ok) {
+      cartItems.value = cartItems.value.filter(item => !ids.includes(item.id))
+      selectedStoreItems.value = []
+    }
+  } catch (err) {
+    console.error('Error removing items:', err)
+  }
+}
+
+const updateCartItemQty = async (itemId: number, quantity: number) => {
+  try {
+    const response = await fetch(`/customer/cart/${itemId}`, {
+      method: 'PUT',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '',
+      },
+      body: JSON.stringify({ quantity })
+    })
+    if (response.ok) {
+      const item = cartItems.value.find(i => i.id === itemId)
+      if (item) item.quantity = quantity
+    }
+  } catch (err) {
+    console.error('Error updating quantity:', err)
   }
 }
 
@@ -446,20 +509,160 @@ onMounted(() => {
             No products found.
           </div>
         </div>
-      </div>
 
-      <Link href="/customer/cart" class="fixed bottom-6 right-6 z-50">
-        <div class="relative h-14 w-14 rounded-full bg-[#245c4a] hover:bg-[#1B4D3E] text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 cursor-pointer">
-          <ShoppingCart class="h-5 w-5" />
-          <span v-if="cartItems.length" class="absolute -top-1 -right-1 bg-[#C5A059] text-white text-xs h-5 w-5 rounded-full flex items-center justify-center">
-            {{ cartItems.length }}
-          </span>
+        <div class="fixed bottom-6 right-6 z-50">
+          <button
+            @click="storeCartModalOpen = true"
+            class="relative h-14 w-14 rounded-full bg-[#245c4a] hover:bg-[#1B4D3E] text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1"
+            aria-label="Open cart"
+          >
+            <ShoppingCart class="h-5 w-5" />
+            <span
+              v-if="storeCartItems.length > 0"
+              class="absolute -top-1 -right-1 bg-[#C5A059] text-white text-xs h-5 w-5 rounded-full flex items-center justify-center font-semibold"
+            >
+              {{ storeCartItems.length }}
+            </span>
+          </button>
         </div>
-      </Link>
+      </div>
     </main>
   </div>
 
   <Teleport to="body">
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="scale-95 opacity-0"
+      enter-to-class="scale-100 opacity-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="scale-100 opacity-100"
+      leave-to-class="scale-95 opacity-0"
+    >
+      <div v-if="storeCartModalOpen" class="fixed bottom-24 right-6 z-50 w-96 bg-white rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[70vh]">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-4 border-b border-border">
+          <div class="flex items-center gap-2">
+            <ShoppingCart class="h-5 w-5 text-[#245c4a]" />
+            <h2 class="text-base font-semibold text-foreground">Cart</h2>
+          </div>
+          <button
+            @click="storeCartModalOpen = false"
+            class="p-1 hover:bg-muted rounded-lg transition"
+            aria-label="Close"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Store Name -->
+        <div class="px-4 pt-3 pb-2 border-b border-border">
+          <p class="text-sm font-medium text-muted-foreground">{{ store.name }}</p>
+        </div>
+
+        <!-- Select All / Remove Selected -->
+        <div v-if="storeCartItems.length > 0" class="flex items-center justify-between px-4 py-3 border-b border-border">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              :checked="storeCartItems.every(item => selectedStoreItems.includes(item.id))"
+              @change="(e) => selectedStoreItems = (e.target as HTMLInputElement).checked ? storeCartItems.map(i => i.id) : []"
+              class="h-5 w-5 rounded border-gray-300 text-[#245c4a]"
+            />
+            <span class="text-sm font-medium text-foreground">Select All</span>
+          </label>
+          <button
+            v-if="selectedStoreItems.length > 0"
+            @click="removeSelectedItems"
+            class="text-sm font-medium text-red-600 hover:text-red-700 transition"
+          >
+            Remove Selected
+          </button>
+        </div>
+
+        <!-- Items List -->
+        <div class="flex-1 overflow-y-auto px-4 space-y-3 py-3">
+          <div v-if="storeCartItems.length === 0" class="py-8 text-center text-muted-foreground">
+            <p class="text-sm">No items from this store</p>
+          </div>
+
+          <div
+            v-for="item in storeCartItems"
+            :key="item.id"
+            class="flex items-start gap-3 p-3 rounded-lg border border-border"
+          >
+            <input
+              type="checkbox"
+              :checked="selectedStoreItems.includes(item.id)"
+              @change="(e) => {
+                if ((e.target as HTMLInputElement).checked) {
+                  selectedStoreItems.push(item.id)
+                } else {
+                  selectedStoreItems = selectedStoreItems.filter(id => id !== item.id)
+                }
+              }"
+              class="h-5 w-5 rounded border-gray-300 text-[#245c4a] mt-0.5 cursor-pointer"
+            />
+
+            <div class="h-12 w-12 overflow-hidden rounded-lg bg-muted border border-border shrink-0">
+              <img
+                v-if="item.image_path"
+                :src="`/storage/${item.image_path}`"
+                :alt="item.product_name"
+                class="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-medium text-foreground line-clamp-2">{{ item.product_name }}</p>
+              <p class="text-xs text-muted-foreground">{{ item.product_description || 'Product description' }}</p>
+              <p class="text-sm font-semibold text-[#245c4a] mt-1">{{ formatCurrency(item.unit_price) }}</p>
+            </div>
+
+            <div class="flex flex-col items-end gap-2">
+              <button
+                @click="removeCartItem(item.id)"
+                class="text-sm font-medium text-red-600 hover:text-red-700 transition"
+              >
+                Remove
+              </button>
+
+              <div class="flex items-center gap-1 border border-border rounded-lg">
+                <button
+                  @click="updateCartItemQty(item.id, Math.max(1, item.quantity - 1))"
+                  :disabled="item.quantity <= 1"
+                  class="h-7 w-7 flex items-center justify-center text-sm hover:bg-muted disabled:opacity-40 transition"
+                >−</button>
+                <span class="w-6 text-center text-sm font-medium">{{ item.quantity }}</span>
+                <button
+                  @click="updateCartItemQty(item.id, item.quantity + 1)"
+                  class="h-7 w-7 flex items-center justify-center text-sm hover:bg-muted transition"
+                >+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div v-if="storeCartItems.length > 0" class="border-t border-border p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-base font-semibold text-foreground">Total</span>
+            <span class="text-lg font-semibold text-[#245c4a]">{{ formatCurrency(storeCartTotal) }}</span>
+          </div>
+
+          <Link href="/customer/cart" class="block text-sm text-[#245c4a] hover:underline text-center font-medium">
+            View all cart
+          </Link>
+
+          <Button class="w-full bg-[#245c4a] hover:bg-[#1B4D3E] text-white font-medium">
+            Pre-order
+          </Button>
+        </div>
+      </div>
+    </Transition>
+
     <Transition
       enter-active-class="transition duration-300 ease-out"
       enter-from-class="translate-y-4 opacity-0"

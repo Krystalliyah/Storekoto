@@ -5,6 +5,7 @@ import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
 import { useSidebar } from '@/composables/useSidebar';
+import { ConfirmationModal } from '@/components/ui/modal';
 
 const { isCollapsed } = useSidebar();
 const contentClass = computed(() => ({
@@ -42,6 +43,9 @@ const sortKey = ref<keyof InventoryItem>('product_name');
 const sortAsc = ref(true);
 const showEditModal = ref(false);
 const editTarget = ref<InventoryItem | null>(null);
+const showDeleteModal = ref(false);
+const pendingDeleteItem = ref<InventoryItem | null>(null);
+const deleteProcessing = ref(false);
 
 const editForm = useForm({
   stock_level: 0,
@@ -128,9 +132,51 @@ function toggleAvailability(item: InventoryItem) {
   router.patch(`/vendor/inventory/${item.id}/toggle`);
 }
 
+function confirmDeleteRow(item: InventoryItem) {
+  pendingDeleteItem.value = item;
+  showDeleteModal.value = true;
+}
+
+function deleteRow() {
+  if (!pendingDeleteItem.value) {
+    return;
+  }
+
+  deleteProcessing.value = true;
+
+  router.delete(`/vendor/inventory/${pendingDeleteItem.value.id}`, {
+    preserveState: true,
+    onFinish: () => {
+      deleteProcessing.value = false;
+      showDeleteModal.value = false;
+      pendingDeleteItem.value = null;
+    },
+  });
+}
+
+function cancelDeleteRow() {
+  showDeleteModal.value = false;
+  pendingDeleteItem.value = null;
+}
+
 function formatPrice(v: number | null | undefined) {
   return '₱' + (v ?? 0).toLocaleString('en-PH', { minimumFractionDigits: 2 });
 }
+
+const deleteInventoryDescription = computed(() => {
+  return 'This action is permanent, tracked to your account, and cannot be undone.';
+});
+
+const deleteInventoryDetails = computed(() => {
+  if (!pendingDeleteItem.value) {
+    return 'It will remove the selected inventory item from your catalog and sales listings.';
+  }
+
+  const item = pendingDeleteItem.value;
+  const totalValue = item.stock_level * item.unit_price;
+
+  return `Delete "${item.product_name}" permanently. Current stock: ${item.stock_level}. Unit price: ${formatPrice(item.unit_price)}. Estimated inventory value: ${formatPrice(totalValue)}.`;
+});
 
 function margin(item: InventoryItem) {
   if (item.unit_price <= 0) return 0;
@@ -323,7 +369,7 @@ function getPageNumbers(): (number | string)[] {
                     <button class="action-btn" title="Edit Inventory" @click="openEdit(item)">
                       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     </button>
-                    <button class="action-btn action-btn--danger" title="Delete Inventory">
+                    <button class="action-btn action-btn--danger" title="Delete Inventory" @click="confirmDeleteRow(item)">
                       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                     </button>
                   </div>
@@ -386,6 +432,19 @@ function getPageNumbers(): (number | string)[] {
           </div>
         </div>
 
+        <ConfirmationModal
+          :open="showDeleteModal"
+          title="Delete inventory item permanently?"
+          :description="deleteInventoryDescription"
+          :details="deleteInventoryDetails"
+          confirm-text="Delete from catalog"
+          variant="destructive"
+          :loading="deleteProcessing"
+          @update:open="showDeleteModal = $event"
+          @confirm="deleteRow"
+          @cancel="cancelDeleteRow"
+        />
+
         <div class="mobile-list mobile-only">
           <div v-if="filtered.length === 0" class="empty-state-mobile">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
@@ -445,7 +504,7 @@ function getPageNumbers(): (number | string)[] {
                 <button class="action-btn" @click="openEdit(item)">
                   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button class="action-btn action-btn--danger">
+                <button class="action-btn action-btn--danger" @click="confirmDeleteRow(item)">
                   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                 </button>
               </div>

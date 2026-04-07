@@ -56,6 +56,10 @@ const selectedTenant = ref<Tenant | null>(null);
 const showApproveModal = ref(false);
 const tenantToApprove = ref<Tenant | null>(null);
 
+const showDeleteModal = ref(false);
+const tenantToDelete = ref<Tenant | null>(null);
+const deleteProcessing = ref(false);
+
 const contentClass = computed(() => ({
     'dashboard-content': true,
     'sidebar-collapsed': isCollapsed.value,
@@ -77,9 +81,34 @@ const submit = () => {
 };
 
 const deleteVendor = (id: string) => {
-    if (confirm('Delete this vendor and its database?')) {
-        router.delete(`/admin/vendors/${id}`);
+    const tenant = props.tenants.data.find((t) => t.id === id);
+    if (!tenant) {
+        return;
     }
+
+    tenantToDelete.value = tenant;
+    showDeleteModal.value = true;
+};
+
+const confirmDeleteVendor = () => {
+    if (!tenantToDelete.value) {
+        return;
+    }
+
+    deleteProcessing.value = true;
+
+    router.delete(`/admin/vendors/${tenantToDelete.value.id}`, {
+        onFinish: () => {
+            deleteProcessing.value = false;
+            showDeleteModal.value = false;
+            tenantToDelete.value = null;
+        },
+    });
+};
+
+const cancelDeleteVendor = () => {
+    showDeleteModal.value = false;
+    tenantToDelete.value = null;
 };
 
 const requestApproveVendor = (tenant: Tenant) => {
@@ -462,13 +491,36 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
                 title="Confirm Vendor Approval"
                 :description="
                     tenantToApprove
-                        ? `Approve ${tenantToApprove.name}? This will create and prepare their tenant database.`
-                        : 'Approve this vendor? This will create and prepare their tenant database.'
-                        "
-                    confirm-text="Approve Vendor"
-                    cancel-text="Cancel"
-                    variant="destructive"
-                    @confirm="confirmApproveVendor"
+                        ? `Approve ${tenantToApprove.name}? This will create their tenant database and enable vendor access.`
+                        : 'Approve this vendor? This will create their tenant database and enable vendor access.'
+                "
+                confirm-text="Approve Vendor"
+                cancel-text="Cancel"
+                variant="destructive"
+                @confirm="confirmApproveVendor"
+            />
+
+            <ConfirmationModal
+                v-model:open="showDeleteModal"
+                title="Delete Vendor"
+                :description="tenantToDelete
+                    ? tenantToDelete.is_approved
+                        ? `Delete ${tenantToDelete.name} and its tenant database permanently?`
+                        : `Delete ${tenantToDelete.name}? This vendor has not been approved yet and no tenant database exists.`
+                    : 'Delete this vendor?'
+                "
+                :details="tenantToDelete
+                    ? tenantToDelete.is_approved
+                        ? `Tenant ID: ${tenantToDelete.id}. This action cannot be undone and will remove the tenant database.`
+                        : `Vendor ID: ${tenantToDelete.id}. The tenant database has not been created yet.`
+                    : 'This action cannot be undone.'
+                "
+                confirm-text="Delete Vendor"
+                cancel-text="Cancel"
+                variant="destructive"
+                :loading="deleteProcessing"
+                @confirm="confirmDeleteVendor"
+                @cancel="cancelDeleteVendor"
             />
         </main>
     </div>

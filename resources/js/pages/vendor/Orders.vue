@@ -5,6 +5,7 @@ import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
 import { useSidebar } from '@/composables/useSidebar';
+import { Clock, CheckCircle, ChefHat, Package, CheckCircle2, XCircle, Eye, ArrowRight, Trash2 } from 'lucide-vue-next';
 
 const { isCollapsed } = useSidebar();
 const contentClass = computed(() => ({
@@ -30,13 +31,19 @@ const props = defineProps<{
     stats: Stats;
 }>();
 
-const STATUS_CONFIG: Record<OrderStatus, { label:string; color:string; bg:string; next:OrderStatus|null }> = {
-    pending:   { label:'Pending',   color:'#b45309', bg:'#fffbeb', next:'confirmed' },
-    confirmed: { label:'Confirmed', color:'#1d4ed8', bg:'#eff6ff', next:'preparing' },
-    preparing: { label:'Preparing', color:'#7c3aed', bg:'#f5f3ff', next:'ready'     },
-    ready:     { label:'Ready',     color:'#059669', bg:'#ecfdf5', next:'completed'  },
-    completed: { label:'Completed', color:'#245c4a', bg:'#f0f9f6', next:null         },
-    cancelled: { label:'Cancelled', color:'#ef4444', bg:'#fef2f2', next:null         },
+const STATUS_CONFIG: Record<OrderStatus, { label:string; color:string; bg:string; next:OrderStatus|null; icon:any }> = {
+    pending:   { label:'Pending',   color:'#b45309', bg:'#fffbeb', next:'confirmed', icon: Clock },
+    confirmed: { label:'Confirmed', color:'#1d4ed8', bg:'#eff6ff', next:'preparing', icon: CheckCircle },
+    preparing: { label:'Preparing', color:'#7c3aed', bg:'#f5f3ff', next:'ready',     icon: ChefHat },
+    ready:     { label:'Ready',     color:'#059669', bg:'#ecfdf5', next:'completed', icon: Package },
+    completed: { label:'Completed', color:'#245c4a', bg:'#f0f9f6', next:null,        icon: CheckCircle2 },
+    cancelled: { label:'Cancelled', color:'#ef4444', bg:'#fef2f2', next:null,        icon: XCircle },
+};
+
+const ACTION_ICONS = {
+    view: Eye,
+    advance: ArrowRight,
+    cancel: Trash2,
 };
 const STATUS_ORDER: OrderStatus[] = ['pending','confirmed','preparing','ready','completed','cancelled'];
 
@@ -80,6 +87,10 @@ function statusBadgeClass(status: OrderStatus): string {
     return `status-badge--${status}`;
 }
 
+function exportOrders() {
+    window.location.href = '/vendor/orders/export';
+}
+
 function formatPrice(v: number | null | undefined) { return '₱' + (v ?? 0).toLocaleString('en-PH', { minimumFractionDigits:2 }); }
 function formatDate(dt: string | null | undefined)  { if (!dt) return '—'; return new Date(dt).toLocaleString('en-PH', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }
 </script>
@@ -101,7 +112,7 @@ function formatDate(dt: string | null | undefined)  { if (!dt) return '—'; ret
                         <h1 class="ord-title">Order Management</h1>
                         <p class="ord-sub">View and process customer pre-orders in real-time</p>
                     </div>
-                    <button class="btn-outline">
+                    <button type="button" class="btn-outline" @click="exportOrders">
                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         <span class="btn-label">Export</span>
                     </button>
@@ -131,7 +142,8 @@ function formatDate(dt: string | null | undefined)  { if (!dt) return '—'; ret
                 <div class="tab-strip-wrap">
                     <div class="tab-strip">
                         <button v-for="s in ['all', ...STATUS_ORDER]" :key="s" class="tab-btn" :class="{'tab-btn--active': filterStatus === s}" @click="filterStatus = s as any">
-                            {{ s === 'all' ? 'All' : STATUS_CONFIG[s as OrderStatus].label }}
+                            <component v-if="s !== 'all'" :is="STATUS_CONFIG[s as OrderStatus].icon" class="tab-icon" />
+                            <span>{{ s === 'all' ? 'All Orders' : STATUS_CONFIG[s as OrderStatus].label }}</span>
                             <span class="tab-count">{{ statusCountMap[s] }}</span>
                         </button>
                     </div>
@@ -197,14 +209,21 @@ function formatDate(dt: string | null | undefined)  { if (!dt) return '—'; ret
                                 </td>
                                 <td>
                                     <span class="status-badge" :class="statusBadgeClass(order.status)">
+                                        <component :is="STATUS_CONFIG[order.status].icon" class="status-icon" />
                                         {{ STATUS_CONFIG[order.status].label }}
                                     </span>
                                 </td>
                                 <td>
                                     <div class="action-row">
-                                        <button class="action-btn" title="View Details" @click="detailOrder = order"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-                                        <button v-if="STATUS_CONFIG[order.status].next" class="action-btn action-btn--advance" :title="`Mark as ${STATUS_CONFIG[STATUS_CONFIG[order.status].next!].label}`" @click="advanceStatus(order)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
-                                        <button v-if="!['completed','cancelled'].includes(order.status)" class="action-btn action-btn--cancel" title="Cancel Order" @click="confirmCancel = order"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                                        <button class="action-btn action-btn--view" title="View Details" @click="detailOrder = order">
+                                            <Eye class="action-icon" />
+                                        </button>
+                                        <button v-if="STATUS_CONFIG[order.status].next" class="action-btn action-btn--advance" :title="`Mark as ${STATUS_CONFIG[STATUS_CONFIG[order.status].next!].label}`" @click="advanceStatus(order)">
+                                            <ArrowRight class="action-icon" />
+                                        </button>
+                                        <button v-if="!['completed','cancelled'].includes(order.status)" class="action-btn action-btn--cancel" title="Cancel Order" @click="confirmCancel = order">
+                                            <Trash2 class="action-icon" />
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -227,7 +246,10 @@ function formatDate(dt: string | null | undefined)  { if (!dt) return '—'; ret
                                 <p class="order-time">{{ formatDate(order.created_at) }}</p>
                             </div>
                             <div class="oc-badges">
-                                <span class="status-badge" :class="statusBadgeClass(order.status)">{{ STATUS_CONFIG[order.status].label }}</span>
+                                <span class="status-badge" :class="statusBadgeClass(order.status)">
+                                    <component :is="STATUS_CONFIG[order.status].icon" class="status-icon" />
+                                    {{ STATUS_CONFIG[order.status].label }}
+                                </span>
                                 <span class="payment-badge" :class="order.is_paid ? 'payment-badge--paid' : 'payment-badge--unpaid'">{{ order.is_paid ? 'Paid' : 'Unpaid' }}</span>
                             </div>
                         </div>
@@ -250,16 +272,16 @@ function formatDate(dt: string | null | undefined)  { if (!dt) return '—'; ret
 
                         <div class="oc-actions">
                             <button class="oc-view-btn" @click="detailOrder = order">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <Eye class="action-icon" />
                                 View Details
                             </button>
                             <div class="oc-action-btns">
                                 <button v-if="STATUS_CONFIG[order.status].next" class="oc-advance-btn" @click="advanceStatus(order)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                    <ArrowRight class="action-icon" />
                                     Mark {{ STATUS_CONFIG[STATUS_CONFIG[order.status].next!].label }}
                                 </button>
                                 <button v-if="!['completed','cancelled'].includes(order.status)" class="action-btn action-btn--cancel" @click="confirmCancel = order">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                    <Trash2 class="action-icon" />
                                 </button>
                             </div>
                         </div>
@@ -298,6 +320,13 @@ function formatDate(dt: string | null | undefined)  { if (!dt) return '—'; ret
                     <div class="detail-section">
                         <p class="section-label">Payment</p>
                         <span class="payment-badge" :class="detailOrder.is_paid?'payment-badge--paid':'payment-badge--unpaid'">{{ detailOrder.is_paid ? 'Paid' : 'Unpaid' }}</span>
+                    </div>
+                    <div class="detail-section">
+                        <p class="section-label">Current Status</p>
+                        <span class="status-badge" :class="statusBadgeClass(detailOrder.status)">
+                            <component :is="STATUS_CONFIG[detailOrder.status].icon" class="status-icon" />
+                            {{ STATUS_CONFIG[detailOrder.status].label }}
+                        </span>
                     </div>
                 </div>
 
@@ -505,6 +534,12 @@ function formatDate(dt: string | null | undefined)  { if (!dt) return '—'; ret
 }
 .tab-btn:hover { background: #fff; color: #245c4a; }
 .tab-btn--active { background: #fff; color: #245c4a; box-shadow: 0 1px 3px rgba(0,0,0,.1); font-weight: 600; }
+
+.tab-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
 .tab-count { 
     background: #EDEDED; 
     color: #737373; 
@@ -696,12 +731,22 @@ Optional: Add a shadow indicator on the right side for scrolling
 .status-badge {
     display: inline-flex;
     align-items: center;
+    gap: 6px;
     padding: 3px 10px;
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 600;
     white-space: nowrap;
     line-height: 1.5;
+}
+
+.status-icon {
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
 }
 
 /* Status colors */
@@ -712,21 +757,59 @@ Optional: Add a shadow indicator on the right side for scrolling
 .status-badge--completed { background: #f0f9f6; color: #245c4a; }
 .status-badge--cancelled { background: #fef2f2; color: #ef4444; }
 
-.action-row { display: flex; gap: 4px; }
+.action-row { display: flex; gap: 6px; }
 .action-btn { 
-    width: 30px; 
-    height: 30px; 
+    width: 32px; 
+    height: 32px; 
     border-radius: 6px; 
-    border: 1px solid #e5e5e5; 
+    border: none; 
     background: #fff; 
     color: #737373; 
     cursor: pointer; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    transition: border-color 0.15s,color 0.15s,background 0.15s; 
+    transition: all 0.2s; 
+    flex-shrink: 0;
 }
-.action-btn:hover { border-color: #245c4a; color: #245c4a; background: #f0f9f6; }
+
+.action-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.action-btn--view {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+.action-btn--view:hover {
+    background: #1d4ed8;
+    color: #fff;
+    border-color: #1d4ed8;
+}
+
+.action-btn--advance {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+.action-btn--advance:hover {
+    background: #059669;
+    color: #fff;
+    border-color: #059669;
+}
+
+.action-btn--cancel {
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+}
+.action-btn--cancel:hover {
+    background: #ef4444;
+    color: #fff;
+    border-color: #ef4444;
+}
 
 .empty-state { text-align: center; padding: 60px 0 !important; }
 .empty-inner { display: flex; flex-direction: column; align-items: center; gap: 12px; color: #a3a3a3; }
