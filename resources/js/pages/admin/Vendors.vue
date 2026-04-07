@@ -816,13 +816,29 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     height: 20px;
 }
 
+/* Find and update the .table-container rule */
 .table-container {
     overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+}
+
+.table-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 30px;
+    background: linear-gradient(to right, transparent, var(--card));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
 }
 
 .vendors-table {
-    width: 100%;
-    border-collapse: collapse;
+    min-width: 800px;
 }
 
 .vendors-table thead th {
@@ -1240,6 +1256,15 @@ const totalVendors = computed(() => props.tenants?.data?.length ?? 0);
     .header-right {
         width: 100%;
         justify-content: stretch;
+    }
+    
+    .table-container {
+        margin: 0 -0.5rem;
+        padding: 0 0.5rem;
+    }
+    
+    .table-container::after {
+        opacity: 1;
     }
 
     .btn-primary {

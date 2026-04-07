@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import Header from '@/components/Header.vue';
 import Sidebar from '@/components/Sidebar.vue';
 import VendorNav from '@/components/navigation/VendorNav.vue';
@@ -77,6 +77,26 @@ const filtered = computed(() => {
   });
 });
 
+// Pagination state
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+const itemsPerPageOptions = [5, 10, 20, 50];
+
+// Paginated data
+const paginatedItems = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filtered.value.slice(start, end);
+});
+
+// Total pages
+const totalPages = computed(() => Math.ceil(filtered.value.length / itemsPerPage.value));
+
+// Reset to first page when filters change
+watch([searchQuery, selectedCategory, selectedStatus, sortKey, sortAsc, itemsPerPage], () => {
+  currentPage.value = 1;
+});
+
 function setSort(key: keyof InventoryItem) {
   if (sortKey.value === key) sortAsc.value = !sortAsc.value;
   else { sortKey.value = key; sortAsc.value = true; }
@@ -120,6 +140,52 @@ function margin(item: InventoryItem) {
 
 function stockBarWidth(item: InventoryItem) {
   return Math.min(100, (item.stock_level / Math.max(item.reorder_level * 3, 1)) * 100) + '%';
+}
+
+// Pagination methods
+function goToPage(page: number) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+}
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+}
+
+function prevPage() {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+}
+
+function getPageNumbers(): (number | string)[] {
+  const delta = 2;
+  const range: number[] = [];
+  const rangeWithDots: (number | string)[] = [];
+  let l: number | undefined;
+
+  for (let i = 1; i <= totalPages.value; i++) {
+    if (i === 1 || i === totalPages.value || (i >= currentPage.value - delta && i <= currentPage.value + delta)) {
+      range.push(i);
+    }
+  }
+
+  range.forEach((i) => {
+    if (l !== undefined) {
+      if (i - l === 2) {
+        rangeWithDots.push(l + 1);
+      } else if (i - l !== 1) {
+        rangeWithDots.push('...');
+      }
+    }
+    rangeWithDots.push(i);
+    l = i;
+  });
+
+  return rangeWithDots;
 }
 </script>
 
@@ -188,6 +254,7 @@ function stockBarWidth(item: InventoryItem) {
         </div>
 
         <div class="table-card desktop-only">
+          <div class="table-responsive">
           <table class="inv-table">
             <thead>
               <tr>
@@ -209,7 +276,7 @@ function stockBarWidth(item: InventoryItem) {
                   </div>
                 </td>
               </tr>
-              <tr v-for="item in filtered" :key="item.id" :class="{'row-unavailable': !item.is_available}">
+              <tr v-for="item in paginatedItems" :key="item.id" :class="{'row-unavailable': !item.is_available}">
                 <td>
                   <div class="product-cell">
                     <div class="product-avatar">{{ item.product_name.charAt(0) }}</div>
@@ -264,6 +331,59 @@ function stockBarWidth(item: InventoryItem) {
               </tr>
             </tbody>
           </table>
+
+          <!-- Pagination Controls -->
+          <div v-if="filtered.length > 0" class="pagination-container">
+            <div class="pagination-info">
+              Showing {{ ((currentPage - 1) * itemsPerPage) + 1 }} to {{ Math.min(currentPage * itemsPerPage, filtered.length) }} of {{ filtered.length }} items
+            </div>
+  
+          <div class="pagination-controls">
+            <div class="items-per-page">
+              <span>Show:</span>
+                <select v-model="itemsPerPage" class="items-per-page-select">
+                  <option v-for="option in itemsPerPageOptions" :key="option" :value="option">
+                  {{ option }}
+                  </option>
+                </select>
+              </div>
+    
+            <div class="pagination-buttons">
+              <button 
+                @click="prevPage" 
+                :disabled="currentPage === 1"
+                class="pagination-btn"
+                :class="{ 'pagination-btn-disabled': currentPage === 1 }"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+      
+              <button
+                v-for="pageNum in getPageNumbers()"
+                :key="pageNum"
+                @click="typeof pageNum === 'number' ? goToPage(pageNum) : null"
+                class="pagination-page"
+                :class="{
+                  'pagination-page-active': currentPage === pageNum,
+                  'pagination-dots': pageNum === '...'
+                }"
+                :disabled="pageNum === '...'"
+              >
+                {{ pageNum }}
+              </button>
+      
+              <button 
+                @click="nextPage" 
+                :disabled="currentPage === totalPages"
+                class="pagination-btn"
+                :class="{ 'pagination-btn-disabled': currentPage === totalPages }"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+          </div>
+          </div>
         </div>
 
         <div class="mobile-list mobile-only">
@@ -272,7 +392,7 @@ function stockBarWidth(item: InventoryItem) {
             <p>No inventory items match your filters</p>
           </div>
 
-          <div v-for="item in filtered" :key="item.id" class="mc" :class="{'mc--unavailable': !item.is_available}">
+          <div v-for="item in paginatedItems" :key="item.id" class="mc" :class="{'mc--unavailable': !item.is_available}">
             <div class="mc-head">
               <div class="product-cell">
                 <div class="product-avatar">{{ item.product_name.charAt(0) }}</div>
@@ -331,6 +451,24 @@ function stockBarWidth(item: InventoryItem) {
               </div>
             </div>
           </div>
+          <!-- Mobile Pagination -->
+<div v-if="filtered.length > 0" class="mobile-pagination">
+  <button 
+    @click="prevPage" 
+    :disabled="currentPage === 1"
+    class="mobile-pagination-btn"
+  >
+    Previous
+  </button>
+  <span class="mobile-page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+  <button 
+    @click="nextPage" 
+    :disabled="currentPage === totalPages"
+    class="mobile-pagination-btn"
+  >
+    Next
+  </button>
+</div>
         </div>
       </div>
     </main>
@@ -644,37 +782,459 @@ function stockBarWidth(item: InventoryItem) {
   .modal-footer .btn-ghost { width:100%; justify-content:center; }
 }
 
-@container inv (max-width: 720px) {
-  .inv-page  { padding:16px; }
-  .inv-title { font-size:1.25rem; }
-  .inv-sub   { font-size:0.8rem; }
-  .btn-label { display:none; }
-  .btn-primary { padding:9px 12px; }
-
-  .stat-grid { grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
-  .stat-card { padding:12px 14px; gap:10px; }
-  .stat-icon { width:36px; height:36px; border-radius:8px; }
-  .stat-value { font-size:1.1rem; }
-  .stat-label { font-size:0.7rem; }
-
-  .filter-bar  { flex-direction:column; }
-  .filter-row  { gap:8px; }
-  .result-count { margin-left:0; }
-
-  .desktop-only { display:none; }
-  .mobile-only  { display:block; }
+/* Mobile styles - up to 768px */
+@media (max-width: 768px) {
+  .inv-page { 
+    padding: 16px; 
+  }
+  
+  .inv-title { 
+    font-size: 1.25rem; 
+  }
+  
+  .inv-sub { 
+    font-size: 0.75rem; 
+  }
+  
+  .stat-grid { 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 10px; 
+    margin-bottom: 16px; 
+  }
+  
+  .stat-card { 
+    padding: 12px; 
+    gap: 10px; 
+  }
+  
+  .stat-icon { 
+    width: 36px; 
+    height: 36px; 
+  }
+  
+  .stat-value { 
+    font-size: 1rem; 
+  }
+  
+  .stat-label { 
+    font-size: 0.65rem; 
+  }
+  
+  .filter-bar { 
+    flex-direction: column; 
+    gap: 10px; 
+  }
+  
+  .filter-row { 
+    width: 100%;
+    gap: 8px; 
+  }
+  
+  .filter-select { 
+    flex: 1; 
+    min-width: 0; 
+  }
+  
+  .result-count { 
+    margin-left: 0; 
+  }
+  
+  .desktop-only { 
+    display: none; 
+  }
+  
+  .mobile-only { 
+    display: block; 
+  }
+  
+  .pagination-controls {
+    flex-direction: column;
+  }
+  
+  .pagination-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 
-@container inv (min-width: 721px) {
-  .filter-bar  { flex-direction:row; align-items:center; }
-  .search-wrap { flex:1; }
-  .filter-row  { flex-wrap:nowrap; }
-  .desktop-only { display:block; }
-  .mobile-only  { display:none; }
+/* Tablet styles - 769px to 1023px */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .inv-page {
+    padding: 20px 24px;
+  }
+  
+  .stat-grid {
+    gap: 12px;
+  }
+  
+  .filter-bar {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .search-wrap {
+    flex: 1;
+  }
+  
+  .filter-row {
+    flex-wrap: nowrap;
+  }
+  
+  .desktop-only {
+    display: block;
+  }
+  
+  .mobile-only {
+    display: none;
+  }
 }
 
-@container inv (max-width: 380px) {
-  .stat-grid { grid-template-columns:1fr 1fr; }
-  .mc-prices { grid-template-columns:1fr 1fr; }
+/* Desktop styles - 1024px and up */
+@media (min-width: 1024px) {
+  .inv-page {
+    padding: 28px 32px;
+  }
+  
+  .filter-bar {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .search-wrap {
+    flex: 1;
+  }
+  
+  .filter-row {
+    flex-wrap: nowrap;
+  }
+  
+  .desktop-only {
+    display: block;
+  }
+  
+  .mobile-only {
+    display: none;
+  }
+}
+
+/* Small mobile devices - up to 480px */
+@media (max-width: 480px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .stat-card {
+    padding: 10px;
+  }
+  
+  .stat-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .stat-value {
+    font-size: 0.9rem;
+  }
+  
+  .mc-prices {
+    grid-template-columns: 1fr;
+  }
+  
+  .mc-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .mc-footer .toggle-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .mc-footer .action-row {
+    justify-content: center;
+  }
+  
+  .mobile-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .pagination-page {
+    min-width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.65rem;
+  }
+}
+
+/* Ensure table doesn't get cut off */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.inv-table {
+  min-width: 800px;
+}
+
+/* Fix for filter selects on mobile */
+@media (max-width: 640px) {
+  .filter-select {
+    font-size: 0.75rem;
+    padding: 8px 10px;
+  }
+  
+  .search-input {
+    font-size: 0.813rem;
+    padding: 8px 12px 8px 34px;
+  }
+  
+  .search-icon {
+    width: 14px;
+    height: 14px;
+    left: 10px;
+  }
+}
+
+/* Pagination Styles */
+.pagination-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e5e5;
+  background: #fafafa;
+}
+
+.dark .pagination-container {
+  border-top-color: #334155;
+  background: #1e293b;
+}
+
+.pagination-info {
+  font-size: 0.75rem;
+  color: #737373;
+  text-align: center;
+}
+
+.dark .pagination-info {
+  color: #94a3b8;
+}
+
+.pagination-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (min-width: 640px) {
+  .pagination-controls {
+    flex-direction: row;
+  }
+}
+
+.items-per-page {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #737373;
+}
+
+.dark .items-per-page {
+  color: #94a3b8;
+}
+
+.items-per-page-select {
+  padding: 0.375rem 0.5rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+
+.dark .items-per-page-select {
+  border-color: #475569;
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #e5e5e5;
+  background: white;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #737373;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: #245c4a;
+  color: #245c4a;
+  background: #f0f9f6;
+}
+
+.pagination-btn-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dark .pagination-btn {
+  border-color: #475569;
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+.dark .pagination-btn:hover:not(:disabled) {
+  border-color: #fcd34d;
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.pagination-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  border: 1px solid #e5e5e5;
+  background: white;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #737373;
+}
+
+.pagination-page:hover:not(.pagination-dots) {
+  border-color: #245c4a;
+  color: #245c4a;
+  background: #f0f9f6;
+}
+
+.pagination-page-active {
+  background: #245c4a;
+  border-color: #245c4a;
+  color: white;
+}
+
+.pagination-page-active:hover {
+  background: #1B4D3E;
+  color: white;
+}
+
+.pagination-dots {
+  border: none;
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+
+.dark .pagination-page {
+  border-color: #475569;
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+.dark .pagination-page:hover:not(.pagination-dots) {
+  border-color: #fcd34d;
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.dark .pagination-page-active {
+  background: #fcd34d;
+  border-color: #fcd34d;
+  color: #0f172a;
+}
+
+.dark .pagination-page-active:hover {
+  background: #fbbf24;
+  color: #0f172a;
+}
+
+/* Mobile Pagination */
+.mobile-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  margin-top: 0.5rem;
+  border-top: 1px solid #e5e5e5;
+}
+
+.dark .mobile-pagination {
+  border-top-color: #334155;
+}
+
+.mobile-pagination-btn {
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #737373;
+}
+
+.mobile-pagination-btn:hover:not(:disabled) {
+  border-color: #245c4a;
+  color: #245c4a;
+  background: #f0f9f6;
+}
+
+.mobile-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dark .mobile-pagination-btn {
+  background: #1e293b;
+  border-color: #475569;
+  color: #94a3b8;
+}
+
+.dark .mobile-pagination-btn:hover:not(:disabled) {
+  border-color: #fcd34d;
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.mobile-page-info {
+  font-size: 0.75rem;
+  color: #737373;
+}
+
+.dark .mobile-page-info {
+  color: #94a3b8;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 </style>

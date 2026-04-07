@@ -141,7 +141,7 @@ const saveChanges = () => {
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6">
                 <section class="overflow-hidden rounded-[30px] border border-[#DCE8E1] bg-white shadow-sm">
     <div class="bg-[linear-gradient(135deg,#1B4A3D_0%,#2C725E_100%)] px-5 py-7 sm:px-7 sm:py-8">
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div class="max-w-2xl">
                 <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[#F7E8C6]">
                     <Sparkles class="h-3.5 w-3.5" />
@@ -149,28 +149,19 @@ const saveChanges = () => {
                 </div>
 
                 <h1 class="text-2xl font-semibold tracking-tight !text-white sm:text-3xl lg:text-4xl">
-                    {{ storeName }}
+                    {{ storeName || 'Complete Your Store Setup' }}
                 </h1>
 
                 <p class="mt-3 max-w-xl text-sm leading-7 text-white sm:text-base">
-                    Keep your storefront polished, informative, and easy to manage across desktop and mobile.
+                    {{ storeName ? 'Keep your storefront polished, informative, and easy to manage.' : 'Fill out the information below to get your store ready for customers.' }}
                 </p>
             </div>
 
-            <div class="grid gap-3 sm:grid-cols-3 lg:min-w-[430px]">
-                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Lead time</p>
-                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ storeForm.pickup_lead_time }}</p>
-                </div>
-
-                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Order notice</p>
-                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ storeForm.order_notice }}</p>
-                </div>
-
-                <div class="rounded-2xl px-4 py-4 backdrop-blur-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Setup</p>
-                    <p class="mt-2 text-xl font-semibold" style="color:#ffffff">{{ setupProgress }}% complete</p>
+            <div class="rounded-2xl px-6 py-4 backdrop-blur-sm text-center" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.15)">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em]" style="color:#ffffff">Setup Progress</p>
+                <p class="mt-2 text-2xl font-semibold" style="color:#ffffff">{{ setupProgress }}% complete</p>
+                <div class="mt-2 w-32 h-1.5 rounded-full bg-white/20">
+                    <div class="h-1.5 rounded-full bg-[#F7E8C6]" :style="{ width: `${setupProgress}%` }"></div>
                 </div>
             </div>
         </div>
