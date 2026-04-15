@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\StoreResource;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Storage;
+use App\Support\ChecksStoreReadiness;
 
 class StoreController extends Controller
 {
+    use ChecksStoreReadiness;
+
     /**
      * Resolve a product image URL — local first, then S3, then placeholder.
      */
@@ -42,7 +45,9 @@ class StoreController extends Controller
         $stores = Tenant::query()
             ->where('is_approved', 1)
             ->latest()
-            ->get();
+            ->get()
+            ->filter(fn ($store) => $this->isStoreReady($store))
+            ->values();
 
         return StoreResource::collection($stores);
     }
@@ -50,8 +55,11 @@ class StoreController extends Controller
     public function show($id)
     {
         $store = Tenant::query()
+            ->where('id', $id)
             ->where('is_approved', 1)
-            ->findOrFail($id);
+            ->firstOrFail();
+
+        abort_unless($this->isStoreReady($store), 404, 'Store not found');
 
         return new StoreResource($store);
     }
@@ -59,8 +67,11 @@ class StoreController extends Controller
     public function products($id)
     {
         $store = Tenant::query()
+            ->where('id', $id)
             ->where('is_approved', 1)
-            ->findOrFail($id);
+            ->firstOrFail();
+
+        abort_unless($this->isStoreReady($store), 404, 'Store not found');
 
         $self = $this;
 
