@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Support\ChecksStoreReadiness;
 
 class ProductController extends Controller
 {
+    use ChecksStoreReadiness;
     /**
      * Helper method to get product image URL from S3 or local storage
      * 
@@ -58,7 +60,9 @@ class ProductController extends Controller
 
         $stores = Tenant::query()
             ->where('is_approved', 1)
-            ->get();
+            ->get()
+            ->filter(fn ($store) => $this->isStoreReady($store))
+            ->values();
 
         $allProducts = [];
 
@@ -160,8 +164,11 @@ class ProductController extends Controller
     public function show($storeId, $productId)
     {
         $store = Tenant::query()
+            ->where('id', $storeId)
             ->where('is_approved', 1)
-            ->findOrFail($storeId);
+            ->firstOrFail();
+
+        abort_unless($this->isStoreReady($store), 404, 'Store not found');
 
         $product = $store->run(function () use ($productId) {
             return \App\Models\Product::with('category')->findOrFail($productId);
@@ -208,8 +215,11 @@ class ProductController extends Controller
         ]);
 
         $store = Tenant::query()
+            ->where('id', $storeId)
             ->where('is_approved', 1)
-            ->findOrFail($storeId);
+            ->firstOrFail();
+
+        abort_unless($this->isStoreReady($store), 404, 'Store not found');
 
         $products = $store->run(function () use ($validated) {
             $query = \App\Models\Product::query()

@@ -9,16 +9,25 @@ use Illuminate\Http\Request;
 use App\Models\CustomerOrder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Support\ChecksStoreReadiness;
 
 class CartController extends Controller
 {
+    use ChecksStoreReadiness;
+
     public function index()
     {
         $carts = Cart::where('user_id', auth()->id())
             ->get()
             ->groupBy('store_id')
             ->map(function ($items, $storeId) {
-                $tenant = Tenant::find($storeId);
+                $tenant = Tenant::where('id', $storeId)
+                    ->where('is_approved', 1)
+                    ->first();
+
+                if (!$tenant || !$this->isStoreReady($tenant)) {
+                    return null;
+                }
 
                 $cartItems = $items->map(function ($item) use ($tenant) {
                     $product = null;
@@ -62,7 +71,7 @@ class CartController extends Controller
                     'items'      => $cartItems,
                 ];
             })
-            ->filter(fn($group) => $group['items']->count() > 0) // drop empty stores
+            ->filter(fn($group) => $group && $group['items']->count() > 0)
             ->values();
 
         return response()->json(['data' => $carts]);
@@ -76,9 +85,12 @@ class CartController extends Controller
             'quantity'   => 'required|integer|min:1',
         ]);
 
-        $tenant = Tenant::find($validated['store_id']);
-        if (!$tenant) {
-            return response()->json(['message' => 'Store not found'], 404);
+        $tenant = Tenant::where('id', $validated['store_id'])
+            ->where('is_approved', 1)
+            ->first();
+
+        if (!$tenant || !$this->isStoreReady($tenant)) {
+            return response()->json(['message' => 'Store not found or not available'], 404);
         }
 
         $existingQty = Cart::where([
@@ -146,7 +158,14 @@ class CartController extends Controller
             'quantity' => 'required|integer|min:1',
         ]);
 
-        $tenant = Tenant::find($cart->store_id);
+        $tenant = Tenant::where('id', $cart->store_id)
+            ->where('is_approved', 1)
+            ->first();
+
+        if (!$tenant || !$this->isStoreReady($tenant)) {
+            return response()->json(['message' => 'Store not found or not available'], 404);
+        }
+
         if ($tenant) {
             $stockError = $tenant->run(function () use ($cart, $validated) {
                 $product = \App\Models\Product::find($cart->product_id);
@@ -244,10 +263,12 @@ class CartController extends Controller
 
         try {
             foreach ($groupedByStore as $storeId => $items) {
-                $tenant = Tenant::find($storeId);
+                $tenant = Tenant::where('id', $storeId)
+                    ->where('is_approved', 1)
+                    ->first();
 
-                if (!$tenant) {
-                    throw new \Exception("Store/tenant [{$storeId}] not found.");
+                if (!$tenant || !$this->isStoreReady($tenant)) {
+                    throw new \Exception("Store/tenant [{$storeId}] not found or not available.");
                 }
 
                 $tenantOrderData = $tenant->run(function () use ($items, $user, $storeId) {

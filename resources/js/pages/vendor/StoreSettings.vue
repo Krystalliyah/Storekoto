@@ -60,15 +60,11 @@ const DEFAULT_HOURS: Record<DayKey, { is_open: boolean; open_time: string; close
 const storeForm = useForm({
     store_name: tenantInfo.value?.name ?? '',
     store_slug: tenantInfo.value?.id ?? '',
-    tagline: tenantInfo.value?.data?.tagline ?? '',
     email: tenantInfo.value?.email ?? '',
     phone: tenantInfo.value?.phone ?? '',
     address: tenantInfo.value?.address ?? '',
-    pickup_notes: tenantInfo.value?.data?.pickup_notes ?? '',
     description: tenantInfo.value?.description ?? '',
     website: tenantInfo.value?.data?.website ?? '',
-    pickup_lead_time: tenantInfo.value?.data?.pickup_lead_time ?? '',
-    order_notice: tenantInfo.value?.data?.order_notice ?? '',
     operating_hours: (tenantInfo.value?.operating_hours ?? DEFAULT_HOURS) as Record<DayKey, { is_open: boolean; open_time: string; close_time: string }>,
 });
 
@@ -83,12 +79,47 @@ const toggles = ref({
     receiveEmailAlerts: true,
 });
 
+const hasText = (value: unknown) => {
+    return typeof value === 'string' ? value.trim().length > 0 : !!value;
+};
+
+const hasValidOperatingHours = (
+    hours: Partial<Record<DayKey, { is_open: boolean; open_time: string; close_time: string }>> | null | undefined
+) => {
+    if (!hours) return false;
+
+    return ORDERED_DAYS.every((dayKey) => {
+        const day = hours[dayKey];
+        if (!day || typeof day.is_open !== 'boolean') {
+            return false;
+        }
+
+        if (!day.is_open) {
+            return true;
+        }
+
+        return hasText(day.open_time) && hasText(day.close_time);
+    });
+};
+
 const completionItems = computed(() => [
-    { label: 'Store profile', done: true },
-    { label: 'Contact details', done: true },
-    { label: 'Pick-up schedule', done: true },
-    { label: 'Notifications', done: true },
-    { label: 'Brand assets', done: false },
+    {
+        label: 'Store profile',
+        done:
+            hasText(storeForm.store_name) &&
+            hasText(storeForm.description),
+    },
+    {
+        label: 'Contact details',
+        done:
+            hasText(storeForm.email) &&
+            hasText(storeForm.phone) &&
+            hasText(storeForm.address),
+    },
+    {
+        label: 'Pick-up schedule',
+        done: hasValidOperatingHours(storeForm.operating_hours),
+    },
 ]);
 
 const completedCount = computed(() => completionItems.value.filter((item) => item.done).length);
@@ -207,15 +238,6 @@ const saveOperatingHours = () => {
                                     <p class="mt-1 text-xs text-muted-foreground opacity-70">Slug is fixed after store creation.</p>
                                 </label>
 
-                                <label class="block md:col-span-2">
-                                    <span class="mb-2 block text-sm font-medium text-foreground">Short tagline</span>
-                                    <input
-                                        v-model="storeForm.tagline"
-                                        type="text"
-                                        class="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-brand-green focus:ring-2 focus:ring-brand-green/10"
-                                    />
-                                </label>
-
                                 <label class="block">
                                     <span class="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
                                         <Mail class="h-4 w-4 text-brand-green dark:text-emerald-500" />
@@ -270,44 +292,8 @@ const saveOperatingHours = () => {
                                     <Clock3 class="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                                     Pick-up operations
                                 </div>
-                                <h2 class="text-base sm:text-lg font-semibold text-foreground">Schedule and order settings</h2>
+                                <h2 class="text-base sm:text-lg font-semibold text-foreground">Operating hours</h2>
                                 <p class="mt-1 text-xs sm:text-sm text-muted-foreground">
-                                    Set the hours and notes customers see when ordering from your store.
-                                </p>
-                            </div>
-
-                            <div class="grid gap-4 md:grid-cols-2">
-                                <label class="block">
-                                    <span class="mb-2 block text-sm font-medium text-foreground">Estimated lead time</span>
-                                    <input
-                                        v-model="storeForm.pickup_lead_time"
-                                        type="text"
-                                        class="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-brand-green focus:ring-2 focus:ring-brand-green/10"
-                                    />
-                                </label>
-
-                                <label class="block">
-                                    <span class="mb-2 block text-sm font-medium text-foreground">Customer order notice</span>
-                                    <input
-                                        v-model="storeForm.order_notice"
-                                        type="text"
-                                        class="h-11 w-full rounded-xl border border-border bg-background px-4 text-sm text-foreground outline-none transition focus:border-brand-green focus:ring-2 focus:ring-brand-green/10"
-                                    />
-                                </label>
-
-                                <label class="block md:col-span-2">
-                                    <span class="mb-2 block text-sm font-medium text-foreground">Pick-up instructions</span>
-                                    <textarea
-                                        v-model="storeForm.pickup_notes"
-                                        rows="3"
-                                        class="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm leading-6 text-foreground outline-none transition focus:border-brand-green focus:ring-2 focus:ring-brand-green/10"
-                                    ></textarea>
-                                </label>
-                            </div>
-
-                            <div class="mt-6 mb-5 flex flex-col gap-3">
-                                <h3 class="text-sm font-semibold text-foreground">Operating hours</h3>
-                                <p class="text-xs text-muted-foreground">
                                     Define when your store is open for pick-ups each day of the week.
                                 </p>
                             </div>
@@ -477,12 +463,6 @@ const saveOperatingHours = () => {
                             </div>
 
                             <div class="space-y-3 text-sm leading-6 text-muted-foreground">
-                                <p>
-                                    Your store currently shows a
-                                    <span class="font-semibold text-foreground">{{ storeForm.pickup_lead_time }}</span>
-                                    estimated lead time and a customer notice of
-                                    <span class="font-semibold text-foreground">{{ storeForm.order_notice }}</span>.
-                                </p>
 
                                 <div class="rounded-2xl border border-dashed border-border bg-card p-4">
                                     <div class="flex items-start gap-3">
