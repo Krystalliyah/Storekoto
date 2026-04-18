@@ -11,8 +11,8 @@ type Product = {
   description: string | null;
   category_id?: number | null;
   category_name: string | null;
-  listing_id?: number | null;
-  listing_name?: string | null;
+  listing_ids?: number[];
+  listing_names?: string[];
   barcode: string | null;
   price: number | null;
   stock: number | null;
@@ -83,7 +83,7 @@ const form = useForm<{
   product_name: string;
   description: string;
   category_id: number | string;
-  listing_id: number | string;
+  listing_ids: number[];
   barcode: string;
   price: string;
   stock: string;
@@ -94,7 +94,7 @@ const form = useForm<{
   product_name: '',
   description: '',
   category_id: '',
-  listing_id: '',
+  listing_ids: [],
   barcode: '',
   price: '',
   stock: '0',
@@ -167,7 +167,7 @@ const flattenedCategories = computed(() => {
 
 const selectedCategoryLabel = computed(() => {
   if (!form.category_id) return null;
-  const category = flattenedCategories.value.find((c) => c.id === form.category_id);
+  const category = flattenedCategories.value.find((c) => c.id === Number(form.category_id));
   return category?.category_name ?? null;
 });
 
@@ -176,6 +176,10 @@ const activeListings = computed(() => props.listings.filter((listing) => listing
 function formatPrice(value: number | string | null | undefined) {
   const amount = Number(value ?? 0);
   return '₱' + amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatListings(names?: string[]) {
+  return names && names.length ? names.join(', ') : 'Standalone';
 }
 
 const deleteProductDescription = computed(() => {
@@ -192,7 +196,7 @@ const deleteProductDescription = computed(() => {
 });
 
 const deleteProductDetails = computed(() => {
-  return 'This will permanently remove the product from your catalog, inventory, and all associated sales data. Any existing orders may be affected.';
+  return 'This will permanently remove the product from your catalog, inventory, and all associated sales data. Any listing connections for this product will also be removed.';
 });
 
 function openCategoryDropdown() {
@@ -220,7 +224,6 @@ function selectCategory(id: number) {
 
 const products = computed(() => props.products.data || []);
 const paginationLinks = computed(() => props.products.links || []);
-const categories = computed(() => props.categories);
 
 function productStatusBadge(isActive: boolean) {
   return isActive
@@ -246,7 +249,7 @@ function openCreateModal() {
   form.reset();
   form.clearErrors();
   form.is_active = true;
-  form.listing_id = '';
+  form.listing_ids = [];
   revokePreview();
   imagePreview.value = null;
   imageInputKey.value++;
@@ -258,8 +261,8 @@ function openEditModal(product: Product) {
   form.clearErrors();
   form.product_name = product.product_name;
   form.description = product.description || '';
-  form.category_id =
-    flattenedCategories.value.find((c) => c.category_name === product.category_name)?.id ?? '';
+  form.category_id = product.category_id ?? '';
+  form.listing_ids = product.listing_ids ?? [];
   form.barcode = product.barcode || '';
   form.price = product.price != null ? String(product.price) : '';
   form.stock = product.stock != null ? String(product.stock) : '0';
@@ -353,7 +356,7 @@ function cancelDeleteProduct() {
           </p>
           <h1 class="text-2xl font-semibold tracking-tight" style="color:#245c4a">Products</h1>
           <p class="text-sm text-muted-foreground mt-1">
-            Manage product names, descriptions, categories, barcodes, and images.
+            Manage product names, descriptions, categories, listings, barcodes, and images.
           </p>
         </div>
 
@@ -403,7 +406,7 @@ function cancelDeleteProduct() {
         <div class="flex-1 min-w-0 relative">
           <input
             v-model="search"
-            placeholder="Search name, description, category, listing, or barcode..."
+            placeholder="Search name, description, or barcode..."
             class="w-full px-4 py-2.5 rounded-xl border border-border bg-gray-50/50 text-foreground focus:outline-none focus:ring-2 focus:bg-white transition-colors text-sm"
             style="--tw-ring-color: rgba(36,92,74,.35);"
           />
@@ -412,6 +415,7 @@ function cancelDeleteProduct() {
             <div class="w-5 h-5 rounded-full border-2 border-[#245C4A]/20 border-t-[#245C4A] animate-spin"></div>
           </div>
         </div>
+
         <div class="sm:text-right flex-shrink-0">
           <p class="text-xs text-muted-foreground bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
             Showing <span class="font-semibold">{{ products.length }}</span> of
@@ -496,7 +500,10 @@ function cancelDeleteProduct() {
                 </div>
 
                 <p class="text-xs text-muted-foreground mt-2">
-                  Listing: <span class="font-semibold text-foreground">{{ product.listing_name || 'Standalone' }}</span>
+                  Listings:
+                  <span class="font-semibold text-foreground">
+                    {{ formatListings(product.listing_names) }}
+                  </span>
                 </p>
 
                 <div class="mt-2 flex items-center gap-2">
@@ -562,7 +569,7 @@ function cancelDeleteProduct() {
           </div>
 
           <div class="w-full overflow-x-auto">
-            <table class="min-w-[960px] w-full border-collapse">
+            <table class="min-w-[980px] w-full border-collapse">
               <thead>
                 <tr style="background:hsl(0 0% 96.1%)">
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
@@ -572,7 +579,7 @@ function cancelDeleteProduct() {
                     Category
                   </th>
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
-                    Listing
+                    Listings
                   </th>
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
                     Barcode
@@ -626,7 +633,7 @@ function cancelDeleteProduct() {
                   </td>
 
                   <td class="px-5 py-4 text-sm text-slate-600">
-                    {{ product.listing_name || 'Standalone' }}
+                    {{ formatListings(product.listing_names) }}
                   </td>
 
                   <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600">
@@ -838,104 +845,109 @@ function cancelDeleteProduct() {
                 </div>
 
                 <!-- Category + Barcode row -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                      Category
-                    </label>
-                    <div class="relative">
-                      <button
-                        type="button"
-                        ref="categoryBtnEl"
-                        @click="openCategoryDropdown"
-                        class="w-full flex items-center justify-between px-3 py-2 rounded-xl border bg-input text-foreground text-sm focus:outline-none focus:ring-2 transition-colors"
-                        :class="form.errors.category_id ? 'border-red-300' : 'border-border'"
-                        style="--tw-ring-color: rgba(36,92,74,.35);"
-                      >
-                        <span :class="selectedCategoryLabel ? 'text-foreground' : 'text-muted-foreground'">
-                          {{ selectedCategoryLabel ?? 'Select category' }}
-                        </span>
-                        <svg
-                          class="w-4 h-4 text-muted-foreground transition-transform flex-shrink-0"
-                          :class="categoryOpen ? 'rotate-180' : ''"
-                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
-                        >
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-
-                      <!-- Dropdown list -->
-                      <Teleport to="body">
-                        <div
-                          v-if="categoryOpen"
-                          class="fixed z-[9999] bg-card rounded-lg border border-border shadow-lg py-1 overflow-y-auto"
-                          :style="{ ...categoryDropdownStyle, maxHeight: '220px' }"
-                        >
-                          <div v-for="category in flattenedCategories" :key="category.id">
-                            <button
-                              @click="selectCategory(category.id)"
-                              class="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-accent text-foreground"
-                              :style="{ paddingLeft: (category.level || 0) * 20 + 12 + 'px' }"
-                            >
-                              <span class="flex items-center gap-2">
-                                <svg
-                                  v-if="form.category_id === category.id"
-                                  class="w-3.5 h-3.5 flex-shrink-0"
-                                  fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"
-                                  style="color:#245c4a"
-                                >
-                                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span v-else class="w-3.5 flex-shrink-0" />
-                                <span :class="{ 'font-semibold': (category.level || 0) === 0 }">
-                                  {{ category.category_name }}
-                                </span>
-                              </span>
-                            </button>
-                          </div>
-                          <p v-if="flattenedCategories.length === 0" class="px-3 py-2 text-xs text-muted-foreground">
-                            No categories available.
-                          </p>
-                        </div>
-                      </Teleport>
-
-                      <!-- Click-outside overlay -->
-                      <div
-                        v-if="categoryOpen"
-                        class="fixed inset-0 z-[9998]"
-                        @click="categoryOpen = false"
-                      />
-                    </div>
-                    <p v-if="form.errors.category_id" class="text-xs mt-1" style="color:#9f1239">
-                      {{ form.errors.category_id }}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                      Listing
-                    </label>
-                    <select
-                      v-model="form.listing_id"
-                      class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground focus:outline-none focus:ring-2 text-sm"
+                <div>
+                  <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Category
+                  </label>
+                  <div class="relative">
+                    <button
+                      type="button"
+                      ref="categoryBtnEl"
+                      @click="openCategoryDropdown"
+                      class="w-full flex items-center justify-between px-3 py-2 rounded-xl border bg-input text-foreground text-sm focus:outline-none focus:ring-2 transition-colors"
+                      :class="form.errors.category_id ? 'border-red-300' : 'border-border'"
                       style="--tw-ring-color: rgba(36,92,74,.35);"
                     >
-                      <option value="">No listing</option>
-                      <option
+                      <span :class="selectedCategoryLabel ? 'text-foreground' : 'text-muted-foreground'">
+                        {{ selectedCategoryLabel ?? 'Select category' }}
+                      </span>
+                      <svg
+                        class="w-4 h-4 text-muted-foreground transition-transform flex-shrink-0"
+                        :class="categoryOpen ? 'rotate-180' : ''"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                      >
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    <Teleport to="body">
+                      <div
+                        v-if="categoryOpen"
+                        class="fixed z-[9999] bg-card rounded-lg border border-border shadow-lg py-1 overflow-y-auto"
+                        :style="{ ...categoryDropdownStyle, maxHeight: '220px' }"
+                      >
+                        <div v-for="category in flattenedCategories" :key="category.id">
+                          <button
+                            @click="selectCategory(category.id)"
+                            class="w-full text-left px-3 py-2 text-sm transition-colors hover:bg-accent text-foreground"
+                            :style="{ paddingLeft: (category.level || 0) * 20 + 12 + 'px' }"
+                          >
+                            <span class="flex items-center gap-2">
+                              <svg
+                                v-if="Number(form.category_id) === category.id"
+                                class="w-3.5 h-3.5 flex-shrink-0"
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"
+                                style="color:#245c4a"
+                              >
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                              <span v-else class="w-3.5 flex-shrink-0" />
+                              <span :class="{ 'font-semibold': (category.level || 0) === 0 }">
+                                {{ category.category_name }}
+                              </span>
+                            </span>
+                          </button>
+                        </div>
+                        <p v-if="flattenedCategories.length === 0" class="px-3 py-2 text-xs text-muted-foreground">
+                          No categories available.
+                        </p>
+                      </div>
+                    </Teleport>
+
+                    <div
+                      v-if="categoryOpen"
+                      class="fixed inset-0 z-[9998]"
+                      @click="categoryOpen = false"
+                    />
+                  </div>
+                  <p v-if="form.errors.category_id" class="text-xs mt-1" style="color:#9f1239">
+                    {{ form.errors.category_id }}
+                  </p>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Listings
+                  </label>
+
+                  <div class="rounded-xl border border-border bg-input px-3 py-3">
+                    <div class="flex flex-wrap gap-x-4 gap-y-2">
+                      <label
                         v-for="listing in activeListings"
                         :key="listing.id"
-                        :value="listing.id"
+                        class="inline-flex items-center gap-2 text-sm text-foreground min-w-[160px]"
                       >
-                        {{ listing.name }}
-                      </option>
-                    </select>
-                    <p class="text-[11px] text-muted-foreground mt-1">
-                      Optional. Assign this product to a vendor-defined listing group.
-                    </p>
-                    <p v-if="form.errors.listing_id" class="text-xs mt-1" style="color:#9f1239">
-                      {{ form.errors.listing_id }}
+                        <input
+                          v-model="form.listing_ids"
+                          type="checkbox"
+                          :value="listing.id"
+                          class="shrink-0"
+                        />
+                        <span class="leading-5 break-words">{{ listing.name }}</span>
+                      </label>
+                    </div>
+
+                    <p v-if="activeListings.length === 0" class="text-xs text-muted-foreground">
+                      No active listings available.
                     </p>
                   </div>
+
+                  <p class="text-[11px] text-muted-foreground mt-1">
+                    Optional. Assign this product to one or more vendor-defined listings.
+                  </p>
+                  <p v-if="form.errors.listing_ids" class="text-xs mt-1" style="color:#9f1239">
+                    {{ form.errors.listing_ids }}
+                  </p>
                 </div>
 
                 <div>

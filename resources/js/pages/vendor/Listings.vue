@@ -32,6 +32,7 @@ const showModal = ref(false);
 const showDeleteModal = ref(false);
 const editingListing = ref<Listing | null>(null);
 const pendingDeleteListing = ref<Listing | null>(null);
+const deleteProcessing = ref(false);
 
 const form = useForm({
   name: '',
@@ -88,9 +89,12 @@ function confirmDelete(listing: Listing) {
 function deleteListing() {
   if (!pendingDeleteListing.value) return;
 
+  deleteProcessing.value = true;
+
   form.delete(`/vendor/listings/${pendingDeleteListing.value.id}`, {
     preserveState: true,
-    onSuccess: () => {
+    onFinish: () => {
+      deleteProcessing.value = false;
       showDeleteModal.value = false;
       pendingDeleteListing.value = null;
     },
@@ -103,42 +107,46 @@ function deleteListing() {
 
   <VendorLayout>
     <div class="p-4 sm:p-6 flex flex-col gap-4">
-
+      <div class="flex flex-col gap-3">
         <Link
-            href="/vendor/products"
-            class="my-6 inline-flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-80"
-            style="color:#245c4a"
+          href="/vendor/products"
+          class="inline-flex items-center gap-2 w-fit px-3 py-2 rounded-xl border border-border bg-white text-sm font-medium hover:bg-accent transition-colors"
+          style="color:#245c4a"
         >
-            <span>←</span>
-            <span>Back to Products</span>
+          <span>←</span>
+          <span>Back to Products</span>
         </Link>
 
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:#245c4a">
-            <span style="color:#C5A059">✦</span> Catalog
-          </p>
-          <h1 class="text-2xl font-semibold tracking-tight" style="color:#245c4a">Listings</h1>
-          <p class="text-sm text-muted-foreground mt-1">
-            Group related products under the same storefront listing.
-          </p>
-        </div>
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-widest mb-1" style="color:#245c4a">
+              <span style="color:#C5A059">✦</span> Catalog
+            </p>
+            <h1 class="text-2xl font-semibold tracking-tight" style="color:#245c4a">Listings</h1>
+            <p class="text-sm text-muted-foreground mt-1">
+              Group related products under one or more storefront listing collections.
+            </p>
+          </div>
 
-        <button
-          @click="openCreateModal"
-          class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90"
-          style="background:#245c4a"
-        >
-          + Add Listing
-        </button>
+          <button
+            @click="openCreateModal"
+            class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90"
+            style="background:#245c4a"
+          >
+            + Add Listing
+          </button>
+        </div>
       </div>
 
       <div class="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-border flex items-start justify-between">
           <div>
             <h2 class="text-sm font-semibold" style="color:#245c4a">Listing Catalog</h2>
-            <p class="text-xs text-muted-foreground mt-0.5">Create and manage vendor-defined product groups.</p>
+            <p class="text-xs text-muted-foreground mt-0.5">
+              Create and manage vendor-defined product groups.
+            </p>
           </div>
+
           <div class="text-xs font-semibold px-2 py-1 rounded" style="background:#f5ead4;color:#7a5800">
             {{ listings.length }} shown
           </div>
@@ -148,30 +156,63 @@ function deleteListing() {
           <table class="min-w-[760px] w-full border-collapse">
             <thead>
               <tr style="background:hsl(0 0% 96.1%)">
-                <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">Listing</th>
-                <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">Products</th>
-                <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">Status</th>
-                <th class="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">Actions</th>
+                <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
+                  Listing
+                </th>
+                <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
+                  Products
+                </th>
+                <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
+                  Status
+                </th>
+                <th class="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
+                  Actions
+                </th>
               </tr>
             </thead>
+
             <tbody>
-              <tr v-for="listing in listings" :key="listing.id" class="border-b border-border last:border-0 hover:bg-[#f0f5f2]">
+              <tr
+                v-for="listing in listings"
+                :key="listing.id"
+                class="border-b border-border last:border-0 hover:bg-[#f0f5f2]"
+              >
                 <td class="px-5 py-4">
                   <p class="text-sm font-semibold text-foreground">{{ listing.name }}</p>
-                  <p class="text-xs text-muted-foreground mt-0.5">{{ listing.description || 'No description' }}</p>
+                  <p class="text-xs text-muted-foreground mt-0.5">
+                    {{ listing.description || 'No description' }}
+                  </p>
                 </td>
-                <td class="px-5 py-4 text-sm text-slate-600">{{ listing.products_count }}</td>
+
+                <td class="px-5 py-4 text-sm text-slate-600">
+                  {{ listing.products_count }}
+                </td>
+
                 <td class="px-5 py-4">
-                  <span class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full" :class="listing.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'">
+                  <span
+                    class="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full"
+                    :class="listing.is_active
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'"
+                  >
                     {{ listing.is_active ? 'Active' : 'Archived' }}
                   </span>
                 </td>
+
                 <td class="px-5 py-4 text-right">
                   <div class="inline-flex items-center gap-2">
-                    <button @click="openEditModal(listing)" class="text-xs font-semibold px-2 py-1 rounded transition-colors hover:bg-slate-100" style="color:#245c4a">
+                    <button
+                      @click="openEditModal(listing)"
+                      class="text-xs font-semibold px-2 py-1 rounded transition-colors hover:bg-slate-100"
+                      style="color:#245c4a"
+                    >
                       Edit
                     </button>
-                    <button @click="confirmDelete(listing)" class="text-xs font-semibold px-2 py-1 rounded transition-colors hover:bg-rose-50 text-rose-600">
+
+                    <button
+                      @click="confirmDelete(listing)"
+                      class="text-xs font-semibold px-2 py-1 rounded transition-colors hover:bg-rose-50 text-rose-600"
+                    >
                       Delete
                     </button>
                   </div>
@@ -194,7 +235,9 @@ function deleteListing() {
             :href="link.url || '#'"
             v-html="link.label"
             class="px-3 py-1.5 rounded-lg text-xs border"
-            :class="link.active ? 'bg-[#245c4a] text-white border-[#245c4a]' : 'bg-white text-slate-600 border-border'"
+            :class="link.active
+              ? 'bg-[#245c4a] text-white border-[#245c4a]'
+              : 'bg-white text-slate-600 border-border'"
           />
         </div>
       </div>
@@ -211,12 +254,15 @@ function deleteListing() {
               Vendor-defined product grouping.
             </p>
           </div>
+
           <button @click="closeModal" class="text-slate-500 hover:text-slate-700 text-sm">✕</button>
         </div>
 
         <form @submit.prevent="submit" class="px-5 py-4 space-y-4">
           <div>
-            <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Listing Name</label>
+            <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Listing Name
+            </label>
             <input
               v-model="form.name"
               type="text"
@@ -227,7 +273,9 @@ function deleteListing() {
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Description</label>
+            <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Description
+            </label>
             <textarea
               v-model="form.description"
               rows="3"
@@ -255,14 +303,15 @@ function deleteListing() {
     </div>
 
     <ConfirmationModal
-        :open="showDeleteModal"
-        title="Delete listing?"
-        description="This will remove the listing group. Products under it will become standalone products."
-        confirm-text="Delete"
-        cancel-text="Cancel"
-        variant="destructive"
-        @update:open="showDeleteModal = $event"
-        @confirm="deleteListing"
+      :open="showDeleteModal"
+      title="Delete listing?"
+      description="This will remove the listing group. Products attached to it will only be detached from this listing and will not be deleted."
+      confirm-text="Delete"
+      cancel-text="Cancel"
+      variant="destructive"
+      :loading="deleteProcessing"
+      @update:open="showDeleteModal = $event"
+      @confirm="deleteListing"
     />
   </VendorLayout>
 </template>

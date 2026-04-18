@@ -65,7 +65,7 @@ class ListingController extends Controller
 
     public function destroy(Listing $listing)
     {
-        $listing->products()->update(['listing_id' => null]);
+        $listing->products()->detach();
         $listing->delete();
 
         return back()->with('success', 'Listing deleted successfully.');

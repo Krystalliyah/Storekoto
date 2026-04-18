@@ -50,7 +50,7 @@ class ProductController extends Controller
     {
         $search = $request->query('search', '');
 
-        $query = Product::with('listing')->latest();
+        $query = Product::with('listings')->latest();
 
         // Apply search filter if provided
         if ($search) {
@@ -78,8 +78,8 @@ class ProductController extends Controller
                     'description' => $product->description,
                     'category_id' => $product->category_id,
                     'category_name' => $category?->name ?? null,
-                    'listing_id' => $product->listing_id,
-                    'listing_name' => $product->listing?->name,
+                    'listing_ids' => $product->listings->pluck('id')->values(),
+                    'listing_names' => $product->listings->pluck('name')->values(),
                     'barcode' => $product->barcode,
                     'price' => $product->price,
                     'stock' => $product->stock,
@@ -162,7 +162,8 @@ class ProductController extends Controller
             'product_name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'category_id' => 'nullable|integer',
-            'listing_id' => 'nullable|integer|exists:listings,id',
+            'listing_ids' => 'nullable|array',
+            'listing_ids.*' => 'integer|exists:listings,id',
             'barcode' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
@@ -175,10 +176,6 @@ class ProductController extends Controller
 
         $validated['category_id'] = isset($validated['category_id']) && $validated['category_id'] !== ''
             ? (int) $validated['category_id']
-            : null;
-
-        $validated['listing_id'] = isset($validated['listing_id']) && $validated['listing_id'] !== ''
-            ? (int) $validated['listing_id']
             : null;
 
         $validated['is_active'] = $request->boolean('is_active');
@@ -194,7 +191,9 @@ class ProductController extends Controller
             $validated['image_path'] = $path;
         }
 
-        Product::create($validated);
+        $product = Product::create($validated);
+
+        $product->listings()->sync($request->input('listing_ids', []));
 
         return back()->with('success', 'Product created successfully!');
     }
@@ -205,7 +204,8 @@ class ProductController extends Controller
             'product_name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'category_id' => 'nullable|integer',
-            'listing_id' => 'nullable|integer|exists:listings,id',
+            'listing_ids' => 'nullable|array',
+            'listing_ids.*' => 'integer|exists:listings,id',
             'barcode' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
@@ -218,10 +218,6 @@ class ProductController extends Controller
 
         $validated['category_id'] = isset($validated['category_id']) && $validated['category_id'] !== ''
             ? (int) $validated['category_id']
-            : null;
-
-        $validated['listing_id'] = isset($validated['listing_id']) && $validated['listing_id'] !== ''
-            ? (int) $validated['listing_id']
             : null;
 
         $validated['is_active'] = $request->boolean('is_active');
@@ -242,6 +238,8 @@ class ProductController extends Controller
         }
 
         $product->update($validated);
+
+        $product->listings()->sync($request->input('listing_ids', []));
 
         return back()->with('success', 'Product updated successfully!');
     }

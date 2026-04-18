@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Product extends Model
 {
@@ -19,7 +19,6 @@ class Product extends Model
         'price',
         'stock',
         'category_id',
-        'listing_id',
         'image_path',
         'is_active',
         'average_rating',
@@ -92,8 +91,8 @@ class Product extends Model
         return round(($count / $this->total_reviews) * 100);
     }
 
-    public function listing(): BelongsTo
+    public function listings(): BelongsToMany
     {
-        return $this->belongsTo(Listing::class);
+        return $this->belongsToMany(Listing::class)->withTimestamps();
     }
 }
