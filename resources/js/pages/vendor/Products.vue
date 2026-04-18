@@ -77,6 +77,17 @@ let previewObjectUrl: string | null = null;
 const categoryOpen = ref(false);
 const categoryBtnEl = ref<HTMLElement | null>(null);
 const categoryDropdownStyle = ref<Record<string, string>>({});
+const listingsOpen = ref(false);
+
+const selectedListingsLabel = computed(() => {
+  if (!form.listing_ids.length) return 'No listings selected';
+
+  const selected = activeListings.value
+    .filter((listing) => form.listing_ids.includes(listing.id))
+    .map((listing) => listing.name);
+
+  return selected.join(', ');
+});
 
 // Define form early since it's used in computed properties and functions
 const form = useForm<{
@@ -254,6 +265,7 @@ function openCreateModal() {
   imagePreview.value = null;
   imageInputKey.value++;
   showModal.value = true;
+  listingsOpen.value = false;
 }
 
 function openEditModal(product: Product) {
@@ -272,6 +284,7 @@ function openEditModal(product: Product) {
   imagePreview.value = product.image_url || null;
   imageInputKey.value++;
   showModal.value = true;
+  listingsOpen.value = false;
 }
 
 function closeModal() {
@@ -281,6 +294,7 @@ function closeModal() {
   editingProduct.value = null;
   revokePreview();
   imagePreview.value = null;
+  listingsOpen.value = false;
 }
 
 function onPickImage(e: Event) {
@@ -920,31 +934,65 @@ function cancelDeleteProduct() {
                     Listings
                   </label>
 
-                  <div class="rounded-xl border border-border bg-input px-3 py-3">
-                    <div class="flex flex-wrap gap-x-4 gap-y-2">
-                      <label
-                        v-for="listing in activeListings"
-                        :key="listing.id"
-                        class="inline-flex items-center gap-2 text-sm text-foreground min-w-[160px]"
-                      >
-                        <input
-                          v-model="form.listing_ids"
-                          type="checkbox"
-                          :value="listing.id"
-                          class="shrink-0"
-                        />
-                        <span class="leading-5 break-words">{{ listing.name }}</span>
-                      </label>
-                    </div>
+                  <div class="relative">
+                    <button
+                      type="button"
+                      @click="listingsOpen = !listingsOpen"
+                      class="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-border bg-input text-foreground text-sm focus:outline-none focus:ring-2 transition-colors"
+                      style="--tw-ring-color: rgba(36,92,74,.35);"
+                    >
+                      <span class="truncate text-left">
+                        {{ selectedListingsLabel }}
+                      </span>
 
-                    <p v-if="activeListings.length === 0" class="text-xs text-muted-foreground">
-                      No active listings available.
-                    </p>
+                      <svg
+                        class="w-4 h-4 text-muted-foreground transition-transform flex-shrink-0 ml-2"
+                        :class="listingsOpen ? 'rotate-180' : ''"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    <div
+                      v-if="listingsOpen"
+                      class="fixed inset-0 z-20"
+                      @click="listingsOpen = false"
+                    />
+
+                    <div
+                      v-if="listingsOpen"
+                      class="absolute z-30 mt-2 w-full rounded-xl border border-border bg-white shadow-lg p-3"
+                    >
+                      <div class="flex flex-wrap gap-x-4 gap-y-2 max-h-52 overflow-y-auto">
+                        <label
+                          v-for="listing in activeListings"
+                          :key="listing.id"
+                          class="inline-flex items-center gap-2 text-sm text-foreground min-w-[160px]"
+                        >
+                          <input
+                            v-model="form.listing_ids"
+                            type="checkbox"
+                            :value="listing.id"
+                            class="shrink-0"
+                          />
+                          <span class="leading-5 break-words">{{ listing.name }}</span>
+                        </label>
+                      </div>
+
+                      <p v-if="activeListings.length === 0" class="text-xs text-muted-foreground">
+                        No active listings available.
+                      </p>
+                    </div>
                   </div>
 
                   <p class="text-[11px] text-muted-foreground mt-1">
                     Optional. Assign this product to one or more vendor-defined listings.
                   </p>
+
                   <p v-if="form.errors.listing_ids" class="text-xs mt-1" style="color:#9f1239">
                     {{ form.errors.listing_ids }}
                   </p>
