@@ -9,7 +9,10 @@ type Product = {
   id: number;
   product_name: string;
   description: string | null;
+  category_id?: number | null;
   category_name: string | null;
+  listing_id?: number | null;
+  listing_name?: string | null;
   barcode: string | null;
   price: number | null;
   stock: number | null;
@@ -30,6 +33,13 @@ type Category = {
   children?: Category[];
 };
 
+type Listing = {
+  id: number;
+  name: string;
+  description?: string | null;
+  is_active: boolean;
+};
+
 // Extended category type for display with level
 type CategoryWithLevel = Category & {
   level?: number;
@@ -48,16 +58,11 @@ const props = defineProps<{
     meta?: any;
   };
   categories: Category[];
+  listings: Listing[];
   totalProducts: number;
   activeProducts: number;
   search?: string;
 }>();
-
-// DEBUG: Log categories to see what's being received from the backend
-console.log('=== DEBUG: Categories received from backend ===');
-console.log('Raw categories:', props.categories);
-console.log('Categories count:', props.categories.length);
-console.log('First category sample:', props.categories[0]);
 
 const showModal = ref(false);
 const showDeleteModal = ref(false);
@@ -78,6 +83,7 @@ const form = useForm<{
   product_name: string;
   description: string;
   category_id: number | string;
+  listing_id: number | string;
   barcode: string;
   price: string;
   stock: string;
@@ -88,6 +94,7 @@ const form = useForm<{
   product_name: '',
   description: '',
   category_id: '',
+  listing_id: '',
   barcode: '',
   price: '',
   stock: '0',
@@ -99,7 +106,7 @@ const form = useForm<{
 watch(search, (newSearch) => {
   // Reset to page 1 when searching
   isSearching.value = true;
-  router.get('/vendor/products', { search: newSearch }, { 
+  router.get('/vendor/products', { search: newSearch }, {
     preserveState: true,
     onFinish: () => {
       isSearching.value = false;
@@ -129,27 +136,21 @@ function buildCategoryTree(flatCategories: Category[]): Category[] {
     }
   });
 
-  console.log('=== Built category tree ===');
-  console.log('Root categories:', roots);
-  
   return roots;
 }
 
 const categoriesTree = computed(() => {
   // Check if categories already have children structure
   if (props.categories.length > 0 && props.categories[0].children !== undefined) {
-    console.log('Categories already have nested structure');
     return props.categories;
   }
-  // Otherwise, build tree from flat list
-  console.log('Building tree from flat categories');
   return buildCategoryTree(props.categories);
 });
 
 // Flatten categories for display and lookup with level tracking
 const flattenedCategories = computed(() => {
   const flat: CategoryWithLevel[] = [];
-  
+
   function flatten(categories: Category[], level: number = 0) {
     categories.forEach(category => {
       flat.push({ ...category, level });
@@ -158,17 +159,9 @@ const flattenedCategories = computed(() => {
       }
     });
   }
-  
+
   flatten(categoriesTree.value);
-  
-  console.log('=== Flattened categories for dropdown ===');
-  console.log('All categories with levels:', flat.map(c => ({ 
-    id: c.id, 
-    name: c.category_name, 
-    level: c.level,
-    parent_id: c.parent_id 
-  })));
-  
+
   return flat;
 });
 
@@ -177,6 +170,8 @@ const selectedCategoryLabel = computed(() => {
   const category = flattenedCategories.value.find((c) => c.id === form.category_id);
   return category?.category_name ?? null;
 });
+
+const activeListings = computed(() => props.listings.filter((listing) => listing.is_active));
 
 function formatPrice(value: number | string | null | undefined) {
   const amount = Number(value ?? 0);
@@ -221,7 +216,6 @@ function openCategoryDropdown() {
 function selectCategory(id: number) {
   form.category_id = id;
   categoryOpen.value = false;
-  console.log('Selected category ID:', id);
 }
 
 const products = computed(() => props.products.data || []);
@@ -252,6 +246,7 @@ function openCreateModal() {
   form.reset();
   form.clearErrors();
   form.is_active = true;
+  form.listing_id = '';
   revokePreview();
   imagePreview.value = null;
   imageInputKey.value++;
@@ -290,8 +285,6 @@ function onPickImage(e: Event) {
   const file = input.files?.[0] ?? null;
   form.image = file;
 
-  console.log('onPickImage:', { file, fileName: file?.name, fileSize: file?.size });
-
   revokePreview();
   if (file) {
     previewObjectUrl = URL.createObjectURL(file);
@@ -302,22 +295,6 @@ function onPickImage(e: Event) {
 }
 
 function submit() {
-  console.log('submit:', {
-    editing: !!editingProduct.value,
-    image: form.image,
-    imageName: form.image?.name,
-    imageSize: form.image?.size,
-    data: {
-      product_name: form.product_name,
-      description: form.description,
-      category_id: form.category_id,
-      barcode: form.barcode,
-      price: form.price,
-      stock: form.stock,
-      is_active: form.is_active,
-    },
-  });
-
   if (editingProduct.value) {
     form.put(`/vendor/products/${editingProduct.value.id}`, {
       forceFormData: true,
@@ -380,13 +357,23 @@ function cancelDeleteProduct() {
           </p>
         </div>
 
-        <button
-          @click="openCreateModal"
-          class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90"
-          style="background:#245c4a"
-        >
-          + Add Product
-        </button>
+        <div class="flex items-center gap-2">
+          <Link
+            href="/vendor/listings"
+            class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl border border-border bg-white hover:bg-accent transition-colors"
+            style="color:#245c4a"
+          >
+            Manage Listings
+          </Link>
+
+          <button
+            @click="openCreateModal"
+            class="inline-flex items-center justify-center text-xs font-semibold px-4 py-2 rounded-xl text-white transition-opacity hover:opacity-90"
+            style="background:#245c4a"
+          >
+            + Add Product
+          </button>
+        </div>
       </div>
 
       <!-- Stats -->
@@ -416,7 +403,7 @@ function cancelDeleteProduct() {
         <div class="flex-1 min-w-0 relative">
           <input
             v-model="search"
-            placeholder="Search name, description, category, or barcode..."
+            placeholder="Search name, description, category, listing, or barcode..."
             class="w-full px-4 py-2.5 rounded-xl border border-border bg-gray-50/50 text-foreground focus:outline-none focus:ring-2 focus:bg-white transition-colors text-sm"
             style="--tw-ring-color: rgba(36,92,74,.35);"
           />
@@ -508,11 +495,18 @@ function cancelDeleteProduct() {
                   </span>
                 </div>
 
+                <p class="text-xs text-muted-foreground mt-2">
+                  Listing: <span class="font-semibold text-foreground">{{ product.listing_name || 'Standalone' }}</span>
+                </p>
+
                 <div class="mt-2 flex items-center gap-2">
                   <div class="flex items-center gap-0.5">
-                    <Star v-for="i in 5" :key="i" 
+                    <Star
+                      v-for="i in 5"
+                      :key="i"
                       :class="i <= (product.average_rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
-                      class="w-3 h-3" />
+                      class="w-3 h-3"
+                    />
                   </div>
                   <Link
                     :href="`/vendor/products/${product.id}/reviews`"
@@ -548,7 +542,6 @@ function cancelDeleteProduct() {
 
         <!-- Desktop table view -->
         <div class="hidden lg:block bg-white rounded-xl border border-border shadow-sm overflow-hidden relative">
-          <!-- Loading overlay -->
           <div v-if="isSearching" class="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
             <div class="flex flex-col items-center gap-3">
               <div class="w-12 h-12 rounded-full border-3 border-[#245C4A]/20 border-t-[#245C4A] animate-spin"></div>
@@ -565,11 +558,11 @@ function cancelDeleteProduct() {
             </div>
             <div class="text-xs font-semibold px-2 py-1 rounded" style="background:#f5ead4;color:#7a5800">
               {{ products.length }} shown
-            </div>  
+            </div>
           </div>
 
           <div class="w-full overflow-x-auto">
-            <table class="min-w-[800px] w-full border-collapse">
+            <table class="min-w-[960px] w-full border-collapse">
               <thead>
                 <tr style="background:hsl(0 0% 96.1%)">
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
@@ -577,6 +570,9 @@ function cancelDeleteProduct() {
                   </th>
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
                     Category
+                  </th>
+                  <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
+                    Listing
                   </th>
                   <th class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
                     Barcode
@@ -590,7 +586,7 @@ function cancelDeleteProduct() {
                   <th class="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground px-5 py-3 border-b border-border">
                     Actions
                   </th>
-                 </tr>
+                </tr>
               </thead>
 
               <tbody>
@@ -629,6 +625,10 @@ function cancelDeleteProduct() {
                     {{ product.category_name || '—' }}
                   </td>
 
+                  <td class="px-5 py-4 text-sm text-slate-600">
+                    {{ product.listing_name || 'Standalone' }}
+                  </td>
+
                   <td class="px-5 py-4 whitespace-nowrap text-sm text-slate-600">
                     {{ product.barcode || '—' }}
                   </td>
@@ -636,9 +636,12 @@ function cancelDeleteProduct() {
                   <td class="px-5 py-4 whitespace-nowrap">
                     <div class="flex items-center gap-2">
                       <div class="flex items-center gap-0.5">
-                        <Star v-for="i in 5" :key="i" 
+                        <Star
+                          v-for="i in 5"
+                          :key="i"
                           :class="i <= (product.average_rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'"
-                          class="w-3 h-3" />
+                          class="w-3 h-3"
+                        />
                       </div>
                       <Link
                         :href="`/vendor/products/${product.id}/reviews`"
@@ -838,7 +841,7 @@ function cancelDeleteProduct() {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                      Category <span style="color:#9f1239">*</span>
+                      Category
                     </label>
                     <div class="relative">
                       <button
@@ -910,18 +913,44 @@ function cancelDeleteProduct() {
 
                   <div>
                     <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                      Barcode
+                      Listing
                     </label>
-                    <input
-                      v-model="form.barcode"
-                      placeholder="e.g. 4901234567890"
-                      class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 text-sm"
+                    <select
+                      v-model="form.listing_id"
+                      class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground focus:outline-none focus:ring-2 text-sm"
                       style="--tw-ring-color: rgba(36,92,74,.35);"
-                    />
-                    <p v-if="form.errors.barcode" class="text-xs mt-1" style="color:#9f1239">
-                      {{ form.errors.barcode }}
+                    >
+                      <option value="">No listing</option>
+                      <option
+                        v-for="listing in activeListings"
+                        :key="listing.id"
+                        :value="listing.id"
+                      >
+                        {{ listing.name }}
+                      </option>
+                    </select>
+                    <p class="text-[11px] text-muted-foreground mt-1">
+                      Optional. Assign this product to a vendor-defined listing group.
+                    </p>
+                    <p v-if="form.errors.listing_id" class="text-xs mt-1" style="color:#9f1239">
+                      {{ form.errors.listing_id }}
                     </p>
                   </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                    Barcode
+                  </label>
+                  <input
+                    v-model="form.barcode"
+                    placeholder="e.g. 4901234567890"
+                    class="w-full px-3 py-2 rounded-xl border border-border bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 text-sm"
+                    style="--tw-ring-color: rgba(36,92,74,.35);"
+                  />
+                  <p v-if="form.errors.barcode" class="text-xs mt-1" style="color:#9f1239">
+                    {{ form.errors.barcode }}
+                  </p>
                 </div>
 
                 <!-- Price + Stock row -->

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Models\InventoryDeletionLog;
+use App\Models\Listing;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,6 @@ class ProductController extends Controller
             return null;
         }
 
-        // Already a full URL
         if (str_starts_with($product->image_path, 'http')) {
             return $product->image_path;
         }
@@ -50,7 +50,7 @@ class ProductController extends Controller
     {
         $search = $request->query('search', '');
 
-        $query = Product::latest();
+        $query = Product::with('listing')->latest();
 
         // Apply search filter if provided
         if ($search) {
@@ -76,7 +76,10 @@ class ProductController extends Controller
                     'id' => $product->id,
                     'product_name' => $product->name,
                     'description' => $product->description,
+                    'category_id' => $product->category_id,
                     'category_name' => $category?->name ?? null,
+                    'listing_id' => $product->listing_id,
+                    'listing_name' => $product->listing?->name,
                     'barcode' => $product->barcode,
                     'price' => $product->price,
                     'stock' => $product->stock,
@@ -110,9 +113,20 @@ class ProductController extends Controller
         // Build the category tree
         $categories = $this->buildCategoryTree($allCategories);
 
+        $listings = Listing::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'description', 'is_active'])
+            ->map(fn ($listing) => [
+                'id' => $listing->id,
+                'name' => $listing->name,
+                'description' => $listing->description,
+                'is_active' => (bool) $listing->is_active,
+            ]);
+
         return inertia('vendor/Products', [
             'products' => $products,
             'categories' => $categories,
+            'listings' => $listings,
             'totalProducts' => $totalProducts,
             'activeProducts' => $activeProducts,
             'search' => $search,
@@ -148,6 +162,7 @@ class ProductController extends Controller
             'product_name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'category_id' => 'nullable|integer',
+            'listing_id' => 'nullable|integer|exists:listings,id',
             'barcode' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
@@ -160,6 +175,10 @@ class ProductController extends Controller
 
         $validated['category_id'] = isset($validated['category_id']) && $validated['category_id'] !== ''
             ? (int) $validated['category_id']
+            : null;
+
+        $validated['listing_id'] = isset($validated['listing_id']) && $validated['listing_id'] !== ''
+            ? (int) $validated['listing_id']
             : null;
 
         $validated['is_active'] = $request->boolean('is_active');
@@ -186,6 +205,7 @@ class ProductController extends Controller
             'product_name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'category_id' => 'nullable|integer',
+            'listing_id' => 'nullable|integer|exists:listings,id',
             'barcode' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
@@ -200,6 +220,10 @@ class ProductController extends Controller
             ? (int) $validated['category_id']
             : null;
 
+        $validated['listing_id'] = isset($validated['listing_id']) && $validated['listing_id'] !== ''
+            ? (int) $validated['listing_id']
+            : null;
+
         $validated['is_active'] = $request->boolean('is_active');
 
         if ($request->hasFile('image')) {
@@ -208,8 +232,7 @@ class ProductController extends Controller
                 Storage::disk('s3')->delete($product->image_path);
             }
 
-            $path = $request->file('image')
-                ->store('products', ['disk' => 's3']);
+            $path = $request->file('image')->store('products', ['disk' => 's3']);
 
             if (! $path) {
                 return back()->withErrors(['image' => 'Unable to upload image to S3.']);

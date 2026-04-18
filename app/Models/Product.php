@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Product extends Model
 {
@@ -18,6 +19,7 @@ class Product extends Model
         'price',
         'stock',
         'category_id',
+        'listing_id',
         'image_path',
         'is_active',
         'average_rating',
@@ -88,5 +90,10 @@ class Product extends Model
         $count = $distribution[$stars] ?? 0;
         
         return round(($count / $this->total_reviews) * 100);
+    }
+
+    public function listing(): BelongsTo
+    {
+        return $this->belongsTo(Listing::class);
     }
 }
