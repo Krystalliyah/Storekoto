@@ -114,6 +114,22 @@ const searchProduct = ref('')
 const selectedCategory = ref<'all' | number>('all')
 const sortBy = ref<'name' | 'price_low' | 'price_high'>('name')
 
+// Derive unique categories from loaded products
+const availableCategories = computed(() => {
+  const seen = new Map<number, string>()
+  for (const p of products.value) {
+    if (p.category_id && p.category_name && !seen.has(p.category_id)) {
+      seen.set(p.category_id, p.category_name)
+    }
+  }
+  return Array.from(seen.entries()).map(([id, name]) => ({ id, name }))
+})
+
+const selectedCategoryLabel = computed(() => {
+  if (selectedCategory.value === 'all') return 'Category'
+  return availableCategories.value.find(c => c.id === selectedCategory.value)?.name ?? 'Category'
+})
+
 const filteredProducts = computed(() => {
   let result = products.value.filter(product => {
     const matchesSearch = product.product_name.toLowerCase().includes(searchProduct.value.toLowerCase())
@@ -453,15 +469,17 @@ onMounted(() => {
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                   <Button variant="outline" class="w-36 justify-between bg-background">
-                    Category
+                    {{ selectedCategoryLabel }}
                     <ChevronDown class="w-4 h-4 opacity-60" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent class="bg-card border-border">
                   <DropdownMenuItem @click="selectedCategory = 'all'">All</DropdownMenuItem>
-                  <DropdownMenuItem @click="selectedCategory = 1">Fruits</DropdownMenuItem>
-                  <DropdownMenuItem @click="selectedCategory = 2">Dairy</DropdownMenuItem>
-                  <DropdownMenuItem @click="selectedCategory = 3">Snacks</DropdownMenuItem>
+                  <DropdownMenuItem
+                    v-for="cat in availableCategories"
+                    :key="cat.id"
+                    @click="selectedCategory = cat.id"
+                  >{{ cat.name }}</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -515,7 +533,8 @@ onMounted(() => {
                 <div class="flex items-center justify-between text-xs text-muted-foreground">
                   <div class="flex items-center gap-1">
                     <span>⭐</span>
-                    <span>{{ product.rating }}</span>
+                    <span v-if="product.rating > 0">{{ product.rating.toFixed(1) }} ({{ product.total_reviews }})</span>
+                    <span v-else class="italic">No reviews</span>
                   </div>
                   <span>{{ product.sold_count }} sold</span>
                 </div>
@@ -678,19 +697,16 @@ onMounted(() => {
         <!-- Footer -->
         <div v-if="storeCartItems.length > 0" class="border-t border-border p-4 space-y-3 bg-secondary/20">
           <div class="flex items-center justify-between">
-            <span class="text-sm text-muted-foreground">
-              {{ selectedStoreItemIds.length > 0 ? 'Selected' : 'Total' }}
-            </span>
+            <span class="text-sm text-muted-foreground">Total</span>
             <span class="text-base font-semibold text-brand-green dark:text-emerald-500">
-              {{ formatCurrency(selectedStoreItemIds.length > 0 ? storeSelectedTotal : storeCartTotal) }}
+              {{ formatCurrency(storeSelectedTotal) }}
             </span>
           </div>
-          <Link href="/customer/cart" class="block text-sm text-brand-green dark:text-emerald-500 hover:underline text-center font-medium">
-            View full cart
+          <Link href="/customer/cart" class="block w-full">
+            <Button class="w-full bg-brand-green hover:opacity-90 text-white dark:bg-emerald-600 font-medium">
+              Checkout Store Items
+            </Button>
           </Link>
-          <Button class="w-full bg-brand-green hover:opacity-90 text-white dark:bg-emerald-600 font-medium">
-            Checkout Store Items
-          </Button>
         </div>
       </div>
     </Transition>

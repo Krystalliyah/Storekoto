@@ -240,7 +240,7 @@ const selectedGroupedByStore = computed(() => {
 
 const storeSubtotal = (storeId: number) =>
   cartItems.value
-    .filter((i) => i.store.id === storeId)
+    .filter((i) => i.store.id === storeId && selectedIds.value.includes(i.id))
     .reduce((sum, i) => sum + i.product.price * i.quantity, 0)
 
 const totalSelected = computed(() =>
@@ -762,7 +762,7 @@ const submitPreorder = async () => {
                 </Button>
 
                 <div class="text-sm">
-                  <span class="text-muted-foreground">Subtotal:</span>
+                  <span class="text-muted-foreground">Selected subtotal:</span>
                   <span class="ml-2 font-semibold text-[#245c4a]">
                     {{ formatCurrency(storeSubtotal(group.store.id)) }}
                   </span>
