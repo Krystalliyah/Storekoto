@@ -178,7 +178,7 @@ const saveOperatingHours = () => {
             <div class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:px-8 py-6">
                 <!-- Hero Section -->
                 <section class="overflow-hidden rounded-[30px] border border-[#DCE8E1] bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                    <div class="bg-[linear-gradient(135deg,#1B4A3D_0%,#2C725E_100%)] dark:bg-[linear-gradient(135deg,#0f172a_0%,#1e293b_100%)] px-5 py-7 sm:px-7 sm:py-8">
+                    <div class="bg-gradient-to-br from-[#1B4A3D] to-[#2C725E] dark:from-[#0f172a] dark:to-[#1e293b] px-5 py-7 sm:px-7 sm:py-8">
                         <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                             <div class="max-w-2xl">
                                 <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-[#F7E8C6]">
@@ -190,22 +190,22 @@ const saveOperatingHours = () => {
                                     {{ storeName || 'Complete Your Store Setup' }}
                                 </h1>
 
-                                <p class="mt-3 max-w-xl text-sm leading-7 text-white sm:text-base opacity-90">
+                                <p class="mt-3 max-w-xl text-sm leading-7 !text-white sm:text-base opacity-90">
                                     {{ storeName ? 'Keep your storefront polished, informative, and easy to manage.' : 'Fill out the information below to get your store ready for customers.' }}
                                 </p>
                             </div>
 
                             <!-- Progress pill: uses full width of its container so 100% truly fills it -->
                             <div class="rounded-2xl px-6 py-4 backdrop-blur-sm text-center bg-white/10 border border-white/10 lg:min-w-[180px]">
-                                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">Setup Progress</p>
-                                <p class="mt-2 text-3xl font-bold text-white tabular-nums">{{ setupProgress }}%</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] !text-white/80">Setup Progress</p>
+                                <p class="mt-2 text-3xl font-bold !text-white tabular-nums">{{ setupProgress }}%</p>
                                 <div class="mt-3 w-full h-2 rounded-full bg-white/20 overflow-hidden">
                                     <div
                                         class="h-2 rounded-full bg-[#F7E8C6] transition-all duration-500"
                                         :style="{ width: `${setupProgress}%` }"
                                     ></div>
                                 </div>
-                                <p class="mt-2 text-[11px] text-white/60">{{ completedCount }} of {{ completionItems.length }} complete</p>
+                                <p class="mt-2 text-[11px] !text-white/60">{{ completedCount }} of {{ completionItems.length }} complete</p>
                             </div>
                         </div>
                     </div>

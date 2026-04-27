@@ -3,6 +3,7 @@
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -51,10 +52,21 @@ Route::domain(config('app.domain'))->group(function () {
             $products = [];
             try {
                 $t->run(function () use (&$products) {
-                    $products = Product::where('is_active', true)
-                        ->latest()
+                    $products = Product::where('products.is_active', true)
+                        ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
+                        ->leftJoin('orders', 'orders.id', '=', 'order_items.order_id')
+                        ->select(
+                            'products.id',
+                            'products.name',
+                            'products.price',
+                            'products.image_path',
+                            DB::raw('SUM(CASE WHEN orders.status = "completed" THEN order_items.quantity ELSE 0 END) as sold_count')
+                        )
+                        ->groupBy('products.id', 'products.name', 'products.price', 'products.image_path')
+                        ->orderByDesc('sold_count')
+                        ->orderByDesc('products.created_at')
                         ->take(4)
-                        ->get(['id', 'name', 'price', 'image_path'])
+                        ->get()
                         ->map(function ($p) {
                             $imageUrl = null;
                             if ($p->image_path) {

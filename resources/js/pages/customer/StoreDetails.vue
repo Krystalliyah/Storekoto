@@ -363,25 +363,25 @@ onMounted(() => {
           </div>
 
           <div class="max-w-6xl mx-auto px-4 sm:px-6">
-            <div class="flex items-end gap-4 -mt-10 sm:-mt-12 relative z-10">
-              <div class="shrink-0">
+            <div class="flex items-end gap-4 relative z-10">
+              <div class="shrink-0 -mt-10 sm:-mt-14">
                 <img
                   :src="store.logo"
-                  class="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl object-cover ring-4 ring-background shadow-xl border border-border"
+                  class="h-20 w-20 sm:h-28 sm:w-28 rounded-2xl object-cover ring-4 ring-background shadow-xl border border-border bg-card"
                 />
               </div>
 
-              <div class="flex-1 min-w-0 pb-1">
-                <h1 class="text-xl sm:text-2xl font-bold text-foreground leading-tight truncate">
+              <div class="flex-1 min-w-0 pb-1.5">
+                <h1 class="text-2xl sm:text-3xl font-bold text-foreground tracking-tight leading-tight">
                   {{ store.name }}
                 </h1>
-                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                  <span class="flex items-center gap-1 text-xs text-muted-foreground">
-                    <MapPin class="h-3 w-3 shrink-0" />
-                    <span class="truncate max-w-[180px]">{{ store.address }}</span>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                  <span class="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
+                    <MapPin class="h-3.5 w-3.5 shrink-0 text-brand-green/70" />
+                    <span class="line-clamp-1">{{ store.address }}</span>
                   </span>
-                  <span class="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Phone class="h-3 w-3 shrink-0" />
+                  <span class="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
+                    <Phone class="h-3.5 w-3.5 shrink-0 text-brand-green/70" />
                     {{ store.phone }}
                   </span>
                 </div>
