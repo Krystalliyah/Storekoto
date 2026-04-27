@@ -363,7 +363,7 @@ onMounted(() => {
           </div>
 
           <div class="max-w-6xl mx-auto px-4 sm:px-6">
-            <div class="flex items-end gap-4 relative z-10">
+            <div class="flex items-end gap-5 relative z-10">
               <div class="shrink-0 -mt-10 sm:-mt-14">
                 <img
                   :src="store.logo"
@@ -372,16 +372,16 @@ onMounted(() => {
               </div>
 
               <div class="flex-1 min-w-0 pb-1.5">
-                <h1 class="text-2xl sm:text-3xl font-bold text-foreground tracking-tight leading-tight">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-tight">
                   {{ store.name }}
                 </h1>
-                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                  <span class="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
-                    <MapPin class="h-3.5 w-3.5 shrink-0 text-brand-green/70" />
-                    <span class="line-clamp-1">{{ store.address }}</span>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-1.5">
+                  <span class="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground font-medium">
+                    <MapPin class="h-3.5 w-3.5 shrink-0 text-brand-green" />
+                    <span>{{ store.address }}</span>
                   </span>
-                  <span class="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
-                    <Phone class="h-3.5 w-3.5 shrink-0 text-brand-green/70" />
+                  <span v-if="store.phone" class="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground font-medium">
+                    <Phone class="h-3.5 w-3.5 shrink-0 text-brand-green" />
                     {{ store.phone }}
                   </span>
                 </div>

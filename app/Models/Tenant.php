@@ -71,4 +71,48 @@ class Tenant extends BaseTenant implements TenantWithDatabase
 
         return \Storage::disk('public')->url($this->cover_photo_path);
     }
+
+    public function getSetupProgressAttribute(): array
+    {
+        $items = [
+            'Store profile' => ! empty($this->name) && ! empty($this->description),
+            'Contact details' => ! empty($this->email) && ! empty($this->phone) && ! empty($this->address),
+            'Pick-up schedule' => $this->hasValidOperatingHours(),
+            'Store branding' => ! empty($this->profile_photo_path) && ! empty($this->cover_photo_path),
+        ];
+
+        $completed = count(array_filter($items));
+        $total = count($items);
+
+        return [
+            'percentage' => (int) round(($completed / $total) * 100),
+            'completed' => $completed,
+            'total' => $total,
+            'items' => $items,
+        ];
+    }
+
+    private function hasValidOperatingHours(): bool
+    {
+        $hours = $this->operating_hours;
+        if (empty($hours) || ! is_array($hours)) {
+            return false;
+        }
+
+        $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        foreach ($days as $day) {
+            $schedule = $hours[$day] ?? null;
+            if (! $schedule) {
+                return false;
+            }
+
+            if (! empty($schedule['is_open'])) {
+                if (empty($schedule['open_time']) || empty($schedule['close_time'])) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
 }

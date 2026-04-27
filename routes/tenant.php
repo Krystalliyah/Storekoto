@@ -148,6 +148,7 @@ Route::middleware([
                 ],
                 'recentOrders' => $recentOrders,
                 'lowStockItems' => $lowStockItems,
+                'setupProgress' => $tenant->setup_progress,
             ]);
         })->name('dashboard');
 
