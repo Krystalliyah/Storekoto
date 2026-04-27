@@ -113,6 +113,7 @@ const fetchProducts = async () => {
 
 const categories = ref<Category[]>([])
 
+// Hierarchical label for the category dropdown trigger (from main)
 const selectedCategoryLabel = computed(() => {
   if (selectedCategory.value === 'all') return 'Category'
   for (const cat of categories.value) {
@@ -335,13 +336,10 @@ onMounted(() => {
 
         <!-- ── STORE HEADER ── social media style, full bleed -->
         <div class="relative">
-          <!-- Cover photo — edge to edge, no horizontal padding -->
           <div class="relative h-52 sm:h-64 w-full overflow-hidden bg-secondary">
             <img :src="store.cover" class="h-full w-full object-cover" />
-            <!-- gradient scrim for readability -->
             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
 
-            <!-- Back button floating top-left over the cover -->
             <div class="absolute top-4 left-4 sm:left-6">
               <Link href="/customer/stores">
                 <button class="inline-flex items-center gap-1.5 rounded-full bg-black/30 backdrop-blur-md border border-white/20 px-3 py-1.5 text-xs font-medium text-white hover:bg-black/50 transition">
@@ -351,7 +349,6 @@ onMounted(() => {
               </Link>
             </div>
 
-            <!-- Open/Closed badge floating top-right -->
             <div class="absolute top-4 right-4 sm:right-6">
               <span
                 class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur-md border"
@@ -365,10 +362,8 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Profile area: avatar overlapping cover, name & meta beside it -->
           <div class="max-w-6xl mx-auto px-4 sm:px-6">
             <div class="flex items-end gap-4 -mt-10 sm:-mt-12 relative z-10">
-              <!-- Avatar with ring -->
               <div class="shrink-0">
                 <img
                   :src="store.logo"
@@ -376,7 +371,6 @@ onMounted(() => {
                 />
               </div>
 
-              <!-- Name + quick meta, sitting just below cover level -->
               <div class="flex-1 min-w-0 pb-1">
                 <h1 class="text-xl sm:text-2xl font-bold text-foreground leading-tight truncate">
                   {{ store.name }}
@@ -394,7 +388,6 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- Description + hours row -->
             <div class="mt-4 pb-5 border-b border-border space-y-3">
               <p v-if="store.description" class="text-sm text-muted-foreground leading-relaxed max-w-2xl">
                 {{ store.description }}
@@ -420,7 +413,7 @@ onMounted(() => {
               <Input v-model="searchProduct" placeholder="Search products…" class="w-full sm:w-52 bg-background h-9 text-sm" />
 
               <div class="flex gap-2">
-                <!-- Category dropdown — from main branch (dynamic, hierarchical) -->
+                <!-- Hierarchical category dropdown (from main) -->
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
                     <Button
@@ -513,11 +506,16 @@ onMounted(() => {
                   <span class="text-base font-bold text-brand-green dark:text-emerald-500">
                     {{ formatCurrency(product.unit_price) }}
                   </span>
-                  <span class="flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                </div>
+
+                <!-- Rating row (from feature/backend-week10) — review count + "No reviews" fallback -->
+                <div class="flex items-center justify-between text-xs text-muted-foreground">
+                  <div class="flex items-center gap-1">
                     <Star class="h-3 w-3 fill-amber-400 text-amber-400" />
-                    {{ product.rating }}
-                    <span class="opacity-60 ml-1">· {{ product.sold_count }} sold</span>
-                  </span>
+                    <span v-if="product.rating > 0">{{ product.rating.toFixed(1) }} ({{ product.total_reviews }})</span>
+                    <span v-else class="italic">No reviews</span>
+                  </div>
+                  <span>{{ product.sold_count }} sold</span>
                 </div>
 
                 <!-- Quantity controls -->
@@ -655,7 +653,6 @@ onMounted(() => {
                   :disabled="item.quantity <= 1"
                   class="h-7 w-7 flex items-center justify-center text-sm hover:bg-secondary disabled:opacity-40 transition"
                 >−</button>
-                <!-- From main: editable quantity input in cart modal -->
                 <input
                   type="number"
                   :value="item.quantity"
@@ -674,7 +671,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Footer -->
+        <!-- Footer (from main) — conditional selected/total + separate "View full cart" link -->
         <div v-if="storeCartItems.length > 0" class="border-t border-border p-4 space-y-3 bg-secondary/20">
           <div class="flex items-center justify-between">
             <span class="text-xs text-muted-foreground">{{ selectedStoreItemIds.length > 0 ? 'Selected total' : 'Total' }}</span>
@@ -729,7 +726,7 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* Category dropdown styles — from main branch */
+/* Category dropdown styles */
 .filter-dropdown-item {
   display: flex !important;
   align-items: center !important;

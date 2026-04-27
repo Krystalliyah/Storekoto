@@ -1,8 +1,10 @@
 <?php
 
+use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
@@ -23,15 +25,15 @@ Route::domain(config('app.domain'))->group(function () {
                 return false;
             }
 
-            $now        = now();
+            $now = now();
             $currentDay = strtolower($now->format('l'));
-            $schedule   = $hours[$currentDay] ?? null;
+            $schedule = $hours[$currentDay] ?? null;
 
             if (! $schedule || empty($schedule['is_open'])) {
                 return false;
             }
 
-            $open  = $schedule['open_time'] ?? null;
+            $open = $schedule['open_time'] ?? null;
             $close = $schedule['close_time'] ?? null;
 
             if (! $open || ! $close) {
@@ -45,17 +47,36 @@ Route::domain(config('app.domain'))->group(function () {
 
         $openStoreCount = $openStoresCollection->count();
 
-        $openStoresData = $openStoresCollection->take(3)->map(function($t) {
+        $openStoresData = $openStoresCollection->take(3)->map(function ($t) {
             $products = [];
             try {
                 $t->run(function () use (&$products) {
-                    $products = \App\Models\Product::where('is_active', true)
+                    $products = Product::where('is_active', true)
                         ->latest()
                         ->take(4)
-                        ->get(['id', 'name', 'price'])
+                        ->get(['id', 'name', 'price', 'image_path'])
+                        ->map(function ($p) {
+                            $imageUrl = null;
+                            if ($p->image_path) {
+                                if (str_starts_with($p->image_path, 'http')) {
+                                    $imageUrl = $p->image_path;
+                                } elseif (Storage::disk('public')->exists($p->image_path)) {
+                                    $imageUrl = Storage::disk('public')->url($p->image_path);
+                                } else {
+                                    $imageUrl = asset('storage/'.$p->image_path);
+                                }
+                            }
+
+                            return [
+                                'id' => $p->id,
+                                'name' => $p->name,
+                                'price' => $p->price,
+                                'image_url' => $imageUrl,
+                            ];
+                        })
                         ->toArray();
                 });
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Ignore missing DBs in demo data
             }
 
@@ -73,11 +94,11 @@ Route::domain(config('app.domain'))->group(function () {
         })->values()->all();
 
         return Inertia::render('Welcome', [
-            'canRegister'    => Features::enabled(Features::registration()),
-            'vendorCount'    => $tenants->count(),
-            'customerCount'  => User::role('customer')->count(),
+            'canRegister' => Features::enabled(Features::registration()),
+            'vendorCount' => $tenants->count(),
+            'customerCount' => User::role('customer')->count(),
             'openStoreCount' => $openStoreCount,
-            'openStores'     => $openStoresData,
+            'openStores' => $openStoresData,
         ]);
     })->name('home');
 
