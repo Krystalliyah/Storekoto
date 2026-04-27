@@ -106,3 +106,14 @@ class StoreController extends Controller
         ]);
     }
 }
+
+
+    // In StoreController.php
+    public function getStoresData()
+    {
+        $stores = Store::select('id', 'name', 'address', 'phone', 'hours', 'is_open as isOpen', 'logo', 'cover')
+            ->get();
+        
+        return response()->json(['data' => $stores]);
+    }
+}

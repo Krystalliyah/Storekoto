@@ -553,8 +553,8 @@
     </div>
 </template>
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { ref, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
     canRegister:    Boolean,
@@ -705,6 +705,20 @@ onUnmounted(() => {
 }
 
 .it-sub-light { color: rgba(255,255,255,0.6); }
+
+.it-live-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.it-live-header div:first-child {
+    text-align: left;
+}
+
+.it-section-eyebrow, .it-section-title, .it-section-sub {
+    text-align: left;
+}
 
 /* ──────────────────────────────────────────────────────────
    NAVBAR

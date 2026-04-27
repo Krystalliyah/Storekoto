@@ -8,9 +8,12 @@ use App\Models\Tenant;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use App\Support\ChecksStoreReadiness;
 
 class CustomerPageController extends Controller
 {
+    use ChecksStoreReadiness; // Add the trait
+
     public function dashboard(Request $request)
     {
         $user = $request->user();
@@ -56,19 +59,21 @@ class CustomerPageController extends Controller
                 ];
             });
 
-        // Approved stores for recommendations
+        // Approved stores for recommendations with readiness check
         $stores = Cache::remember('approved_stores_list', 60, function () {
             return Tenant::where('is_approved', true)
                 ->with('domains')
                 ->get()
+                ->filter(fn ($store) => $this->isStoreReady($store))
                 ->map(fn ($t) => [
                     'id' => $t->id,
                     'name' => $t->name,
                     'domain' => $t->domains->first()?->domain,
                     'hours' => $t->operating_hours,
-                    'logo' => $t->data['logo'] ?? null,
+                    'logo' => $t->profile_photo_url,
                     'isOpen' => $this->checkStoreIsOpen($t->operating_hours),
-                ]);
+                ])
+                ->values();
         });
 
         return inertia('customer/Dashboard', [

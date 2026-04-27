@@ -87,8 +87,8 @@ Route::domain(config('app.domain'))->group(function () {
                 'phone' => $t->phone ?? '',
                 'hours' => 'Open Today',
                 'isOpen' => true,
-                'logo' => $t->data['logo'] ?? null,
-                'cover' => $t->data['cover'] ?? null,
+                'logo' => $t->profile_photo_url,
+                'cover' => $t->cover_photo_url,
                 'products' => $products,
             ];
         })->values()->all();
